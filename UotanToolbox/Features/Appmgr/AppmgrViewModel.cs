@@ -1,12 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Avalonia.Controls.Notifications;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Material.Icons;
+using ReactiveUI;
 using Splat;
 using SukiUI.Dialogs;
 using SukiUI.Toasts;
@@ -24,6 +29,12 @@ public partial class AppmgrViewModel : MainPageBase
     private bool isSystemAppDisplayed = false, isInstalling = false;
     [ObservableProperty]
     private string _apkFile;
+    [ObservableProperty]
+    private string _search;
+
+    ApplicationInfo[] allApplicationInfos;
+    List<ApplicationInfo> applicationInfos;
+
     private static string GetTranslation(string key)
     {
         return FeaturesHelper.GetTranslation(key);
@@ -31,13 +42,36 @@ public partial class AppmgrViewModel : MainPageBase
 
     public AppmgrViewModel() : base(GetTranslation("Sidebar_Appmgr"), MaterialIconKind.ViewGridPlusOutline, -700)
     {
+        _ = this.WhenAnyValue(app => app.Search)
+            .Subscribe(option =>
+            {
+                if (applicationInfos != null && allApplicationInfos != null)
+                {
+                    if (!string.IsNullOrEmpty(Search))
+                    {
+                        applicationInfos.Clear();
+                        applicationInfos.AddRange(allApplicationInfos.Where(app => app.DisplayName.Contains(Search) || app.Name.Contains(Search))
+                                                                     .OrderByDescending(app => app.Size)
+                                                                     .ThenBy(app => app.Name)
+                                                                     .ToList());
+                        Applications = new ObservableCollection<ApplicationInfo>(applicationInfos);
+                    }
+                    else
+                    {
+                        applicationInfos.Clear();
+                        applicationInfos.AddRange(allApplicationInfos.Where(info => info != null)
+                                                                     .OrderByDescending(app => app.Size)
+                                                                     .ThenBy(app => app.Name)
+                                                                     .ToList());
+                        Applications = new ObservableCollection<ApplicationInfo>(applicationInfos);
+                    }
+                }
+            });
     }
 
     [RelayCommand]
     public async Task Connect()
     {
-        HasItems = false;
-        MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
         IsBusy = true;
         await Task.Run(async () =>
         {
@@ -54,6 +88,26 @@ public partial class AppmgrViewModel : MainPageBase
                 });
                 IsBusy = false; return;
             }
+            MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
+            if (!(sukiViewModel.Status == GetTranslation("Home_System")))
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    Global.MainDialogManager.CreateDialog()
+                                .OfType(NotificationType.Error)
+                                .WithTitle(GetTranslation("Common_Error"))
+                                .WithContent(GetTranslation("Appmgr_PleaseExecuteInSystem"))
+                                .Dismiss().ByClickingBackground()
+                                .TryShow();
+                });
+                IsBusy = false; return;
+            }
+            await CallExternalProgram.ADB($"-s {Global.thisdevice} push \"{Path.Join(Global.runpath,"Push", "list_apps")}\" /data/local/tmp/");
+            await CallExternalProgram.ADB($"-s {Global.thisdevice} shell chmod 777 /data/local/tmp/list_apps");
+            await CallExternalProgram.ADB($"-s {Global.thisdevice} shell /data/local/tmp/list_apps > /data/local/tmp/apps.txt");
+            await CallExternalProgram.ADB($"-s {Global.thisdevice} pull /data/local/tmp/apps.txt {Global.tmp_path}");
+            string fulllists = File.ReadAllText(Path.Join(Global.tmp_path, "apps.txt"));
+            List<ApplicationInfo> fullapplications = StringHelper.ParseApplicationInfo(fulllists);
             string fullApplicationsList = !IsSystemAppDisplayed
                 ? await CallExternalProgram.ADB($"-s {Global.thisdevice} shell pm list packages -3")
                 : await CallExternalProgram.ADB($"-s {Global.thisdevice} shell pm list packages");
@@ -70,40 +124,38 @@ public partial class AppmgrViewModel : MainPageBase
                 });
                 IsBusy = false; return;
             }
-            if (!(sukiViewModel.Status == GetTranslation("Home_System")))
-            {
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    Global.MainDialogManager.CreateDialog()
-                                .OfType(NotificationType.Error)
-                                .WithTitle(GetTranslation("Common_Error"))
-                                .WithContent(GetTranslation("Appmgr_PleaseExecuteInSystem"))
-                                .Dismiss().ByClickingBackground()
-                                .TryShow();
-                });
-                IsBusy = false; return;
-            }
             string[] lines = fullApplicationsList.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries);
             HasItems = lines.Length > 0;
-            System.Collections.Generic.IEnumerable<Task<ApplicationInfo>> applicationInfosTasks = lines.Select(async line =>
+            IEnumerable<Task<ApplicationInfo>> applicationInfosTasks = lines.Select(async line =>
             {
+                string displayName = null;
                 string packageName = ExtractPackageName(line);
+                foreach (ApplicationInfo app in fullapplications)
+                {
+                    if (app.Name == packageName)
+                    {
+                        displayName = app.DisplayName;
+                        break;
+                    }
+                }
                 if (string.IsNullOrEmpty(packageName))
                 {
                     return null;
                 }
-
                 string combinedOutput = await CallExternalProgram.ADB($"-s {Global.thisdevice} shell dumpsys package {packageName}");
                 string[] splitOutput = combinedOutput.Split('\n', ' ');
                 string otherInfo = GetVersionName(splitOutput) + " | " + GetInstalledDate(splitOutput) + " | " + GetSdkVersion(splitOutput);
-                return new ApplicationInfo { Name = packageName, OtherInfo = otherInfo };
+                return new ApplicationInfo { Name = packageName, DisplayName = displayName, OtherInfo = otherInfo };
             });
-            ApplicationInfo[] allApplicationInfos = await Task.WhenAll(applicationInfosTasks);
-            System.Collections.Generic.List<ApplicationInfo> applicationInfos = allApplicationInfos.Where(info => info != null)
+            allApplicationInfos = await Task.WhenAll(applicationInfosTasks);
+            applicationInfos = allApplicationInfos.Where(info => info != null)
                                                      .OrderByDescending(app => app.Size)
                                                      .ThenBy(app => app.Name)
                                                      .ToList();
             Applications = new ObservableCollection<ApplicationInfo>(applicationInfos);
+            await CallExternalProgram.ADB($"-s {Global.thisdevice} shell rm /data/local/tmp/apps.txt");
+            await CallExternalProgram.ADB($"-s {Global.thisdevice} shell rm /data/local/tmp/list_apps");
+            File.Delete(Path.Join(Global.tmp_path, "apps.txt"));
             IsBusy = false;
         });
 
@@ -577,6 +629,9 @@ public partial class ApplicationInfo : ObservableObject
 
     [ObservableProperty]
     private string name;
+
+    [ObservableProperty]
+    private string? displayName;
 
     [ObservableProperty]
     private string size;

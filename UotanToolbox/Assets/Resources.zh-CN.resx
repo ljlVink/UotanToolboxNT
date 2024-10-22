@@ -126,8 +126,8 @@
   <data name="Home_AdbRebootTo" xml:space="preserve">
     <value>ADB 重启至</value>
   </data>
-  <data name="Home_AndroidSDK" xml:space="preserve">
-    <value>安卓SDK</value>
+  <data name="Home_SystemSDK" xml:space="preserve">
+    <value>系统</value>
   </data>
   <data name="Home_BackButton" xml:space="preserve">
     <value>返回</value>
@@ -1433,5 +1433,8 @@
   </data>
   <data name="Common_Warn" xml:space="preserve">
     <value>警告</value>
+  </data>
+  <data name="Basicflash_Reboot" xml:space="preserve">
+    <value>重启至</value>
   </data>
 </root>
