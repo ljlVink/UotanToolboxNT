@@ -126,9 +126,6 @@
   <data name="Home_AdbRebootTo" xml:space="preserve">
     <value>ADB 重启至</value>
   </data>
-  <data name="Home_SystemSDK" xml:space="preserve">
-    <value>系统</value>
-  </data>
   <data name="Home_BackButton" xml:space="preserve">
     <value>返回</value>
   </data>
@@ -268,7 +265,7 @@
     <value>设备已断开连接</value>
   </data>
   <data name="Common_EnterRecOrOpenADB" xml:space="preserve">
-    <value>请进入Recovery模式或开启USB调试！</value>
+    <value>请进入Recovery模式或在安卓系统中开启USB调试！</value>
   </data>
   <data name="Common_NotConnected" xml:space="preserve">
     <value>设备未连接！</value>
@@ -625,7 +622,7 @@
     <value>读取分区表</value>
   </data>
   <data name="Modifypartition_RemoveLimit" xml:space="preserve">
-    <value>解除限制</value>
+    <value>解除分区数量限制</value>
   </data>
   <data name="Modifypartition_StartpointColon" xml:space="preserve">
     <value>起始点:</value>
@@ -661,7 +658,7 @@
     <value>切换槽位</value>
   </data>
   <data name="Appmgr_ApkFile" xml:space="preserve">
-    <value>APK文件</value>
+    <value>安装包文件</value>
   </data>
   <data name="Appmgr_ApplicationListHasntBeenFetched" xml:space="preserve">
     <value>暂未获取应用列表</value>
@@ -960,9 +957,6 @@
   <data name="Common_EnterRecovery" xml:space="preserve">
     <value>请进入Recovery模式！</value>
   </data>
-  <data name="Appmgr_PleaseExecuteInSystem" xml:space="preserve">
-    <value>请在系统内执行</value>
-  </data>
   <data name="Common_DeviceFailedToConnect" xml:space="preserve">
     <value>设备连接失败</value>
   </data>
@@ -1171,7 +1165,8 @@
     <value>该操作需要ROOT权限，请确保手机已ROOT，并在接下来的弹窗中授予 Shell ROOT权限！</value>
   </data>
   <data name="Common_OpenADB" xml:space="preserve">
-    <value>请进入系统并开启USB调试！</value>
+    <value>请进入安卓系统并开启USB调试！
+*暂不支持鸿蒙设备！</value>
   </data>
   <data name="FormatExtract_BackingUp" xml:space="preserve">
     <value>正在备份...</value>
@@ -1393,10 +1388,7 @@
     <value>有线转为无线</value>
   </data>
   <data name="Home_WirelessADB" xml:space="preserve">
-    <value>无线ADB连接</value>
-  </data>
-  <data name="Home_WirelessADBTitle" xml:space="preserve">
-    <value>无线ADB连接</value>
+    <value>无线连接</value>
   </data>
   <data name="Main_CanResize" xml:space="preserve">
     <value>解除窗口高度锁定</value>
@@ -1411,13 +1403,13 @@
     <value>请输入全部内容！</value>
   </data>
   <data name="MainView_ADB" xml:space="preserve">
-    <value>ADB服务</value>
+    <value>ADB/HDC服务</value>
   </data>
   <data name="MainView_Disconnect" xml:space="preserve">
     <value>尝试断开连接</value>
   </data>
   <data name="MainView_RestartADB" xml:space="preserve">
-    <value>重启ADB服务</value>
+    <value>重启服务</value>
   </data>
   <data name="WirelessADB_Connect" xml:space="preserve">
     <value>连接成功！</value>
@@ -1436,5 +1428,57 @@
   </data>
   <data name="Basicflash_Reboot" xml:space="preserve">
     <value>重启至</value>
+  </data>
+  <data name="Home_Android" xml:space="preserve">
+    <value>Android</value>
+  </data>
+  <data name="Home_OpenHOS" xml:space="preserve">
+    <value>OpenHarmony</value>
+  </data>
+  <data name="Common_ADBRoot" xml:space="preserve">
+    <value>检测到ADB设备，但当前系统似乎存未写入相关USB规则，是否尝试以Root权限执行？</value>
+  </data>
+  <data name="Common_HDCRoot" xml:space="preserve">
+    <value>检测到HDC设备，但当前系统似乎存未写入相关USB规则，是否尝试以Root权限执行？</value>
+  </data>
+  <data name="ConnectionDialog_GetUpdate" xml:space="preserve">
+    <value>前往更新</value>
+  </data>
+  <data name="Appmgr_SearchApp" xml:space="preserve">
+    <value>搜索你想要的应用</value>
+  </data>
+  <data name="ConnectionDialog_Updates" xml:space="preserve">
+    <value>发现新版本，建议尽快更新哦！</value>
+  </data>
+  <data name="ConnectionDialog_ViewUpdates" xml:space="preserve">
+    <value>查看更新</value>
+  </data>
+  <data name="Appmgr_SearchWait" xml:space="preserve">
+    <value>请等待应用全部加载......</value>
+  </data>
+  <data name="Common_OpenADBOrHDC" xml:space="preserve">
+    <value>请进入安卓或鸿蒙系统并开启USB调试</value>
+  </data>
+  <data name="Home_CheckDevice" xml:space="preserve">
+    <value>未检测到设备连接，
+如在安卓或鸿蒙系统下请确保设备已开启USB调试，
+如在其他模式请确保驱动正确安装。</value>
+  </data>
+  <data name="Settings_OpenSource" xml:space="preserve">
+    <value>开源项目</value>
+  </data>
+  <data name="Wiredflash_AddMagisk" xml:space="preserve">
+    <value>添加   Magisk</value>
+  </data>
+  <data name="Wiredflash_AddRootTip" xml:space="preserve">
+    <value>勾选该选项将默认使用工具箱内置的Magisk对Boot进行修补，版本与基础刷入页面默认显示的一致。
+如您希望更换Magisk，请先在基础刷入页面选择您的Magisk，确认工具箱支持该版本的Magisk后将其替换为工具箱目录下APK文件夹内的Magisk.apk文件。
+*仅当刷机包使用原版Boot镜像时有效！</value>
+  </data>
+  <data name="Wiredflash_OpenAPK" xml:space="preserve">
+    <value>打开APK目录</value>
+  </data>
+  <data name="Wiredflash_RepairBoot" xml:space="preserve">
+    <value>正在修补Boot镜像......</value>
   </data>
 </root>

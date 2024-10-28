@@ -1,6 +1,3 @@
-using System;
-using System.Globalization;
-using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -9,6 +6,9 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using SukiUI.Dialogs;
 using SukiUI.Toasts;
+using System;
+using System.Globalization;
+using System.Linq;
 using UotanToolbox.Common;
 using UotanToolbox.Features;
 using UotanToolbox.Services;
@@ -27,6 +27,7 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // Load Language settings
         CultureInfo CurCulture = Settings.Default.Language is not null and not ""
             ? new CultureInfo(Settings.Default.Language, false)
             : CultureInfo.CurrentCulture;

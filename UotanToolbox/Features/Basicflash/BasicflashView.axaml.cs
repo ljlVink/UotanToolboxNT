@@ -1,17 +1,13 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Avalonia.Collections;
+﻿using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
-using Avalonia.Threading;
 using SukiUI.Dialogs;
 using SukiUI.Toasts;
-using SukiUI.Controls;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using UotanToolbox.Common;
 using UotanToolbox.Common.PatchHelper;
 
@@ -220,14 +216,15 @@ public partial class BasicflashView : UserControl
                     Global.MainDialogManager.CreateDialog()
                                                 .WithTitle(GetTranslation("Common_Warn"))
                                                 .WithContent(GetTranslation("Basicflash_BasicUnlock"))
-                                                .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ => 
+                                                .OfType(NotificationType.Warning)
+                                                .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ =>
                                                 {
                                                     BusyBaseUnlock.IsBusy = true;
                                                     BaseUnlockPanel.IsEnabled = false;
                                                     await CallExternalProgram.Fastboot($"-s {Global.thisdevice} {SimpleContent.SelectedItem}");
                                                     Global.MainDialogManager.CreateDialog()
-                                                    .WithTitle(GetTranslation("Common_Error"))
-                                                    .OfType(NotificationType.Error)
+                                                    .WithTitle(GetTranslation("Common_Execution"))
+                                                    .OfType(NotificationType.Information)
                                                     .WithContent(GetTranslation("Basicflash_CheckUnlock"))
                                                     .Dismiss().ByClickingBackground()
                                                     .TryShow();
@@ -300,7 +297,8 @@ public partial class BasicflashView : UserControl
                         Global.MainDialogManager.CreateDialog()
                                                     .WithTitle(GetTranslation("Common_Succ"))
                                                     .WithContent(GetTranslation("Basicflash_RecoverySucc"))
-                                                    .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ => 
+                                                    .OfType(NotificationType.Success)
+                                                    .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ =>
                                                     {
                                                         output = await CallExternalProgram.Fastboot($"-s {Global.thisdevice} oem reboot-recovery");
                                                         if (output.Contains("unknown command"))
@@ -447,7 +445,7 @@ public partial class BasicflashView : UserControl
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 BusyReboot.IsBusy = true;
                 RebootPanel.IsEnabled = false;
@@ -455,8 +453,8 @@ public partial class BasicflashView : UserControl
                 {
                     await CallExternalProgram.ADB($"-s {Global.thisdevice} {RebootComm.SelectedItem}");
                     Global.MainDialogManager.CreateDialog()
-                                        .WithTitle(GetTranslation("Common_Error"))
-                                        .OfType(NotificationType.Error)
+                                        .WithTitle(GetTranslation("Common_Execution"))
+                                        .OfType(NotificationType.Information)
                                         .WithContent(GetTranslation("Common_Execution"))
                                         .Dismiss().ByClickingBackground()
                                         .TryShow();
@@ -509,7 +507,7 @@ public partial class BasicflashView : UserControl
                 return;
             }
             MagiskFile.Text = StringHelper.FilePath(files[0].Path.ToString());
-            //Global.Zipinfo = await ZipDetect.Zip_Detect(MagiskFile.Text);
+            Global.Zipinfo = await ZipDetect.Zip_Detect(MagiskFile.Text);
             Global.MainDialogManager.CreateDialog()
                                         .OfType(NotificationType.Information)
                                         .WithContent($"{GetTranslation("Basicflash_DetectZIP")}\nUseful:{Global.Zipinfo.IsUseful}\nMode:{Global.Zipinfo.Mode}\nVersion:{Global.Zipinfo.Version}")
@@ -552,7 +550,7 @@ public partial class BasicflashView : UserControl
                 return;
             }
             BootFile.Text = StringHelper.FilePath(files[0].Path.ToString());
-            //Global.Bootinfo = await BootDetect.Boot_Detect(BootFile.Text);
+            Global.Bootinfo = await BootDetect.Boot_Detect(BootFile.Text);
             ArchList.SelectedItem = Global.Bootinfo.Arch;
             Global.MainDialogManager.CreateDialog()
                                         .OfType(NotificationType.Information)
@@ -588,7 +586,7 @@ public partial class BasicflashView : UserControl
             }
             if ((Global.Zipinfo.Mode == PatchMode.None) | (Global.Zipinfo.IsUseful != true))
             {
-                //Global.Zipinfo = await ZipDetect.Zip_Detect(MagiskFile.Text);
+                Global.Zipinfo = await ZipDetect.Zip_Detect(MagiskFile.Text);
             }
             string newboot = null;
             switch (Global.Zipinfo.Mode)
@@ -597,16 +595,17 @@ public partial class BasicflashView : UserControl
                     newboot = await MagiskPatch.Magisk_Patch(Global.Zipinfo, Global.Bootinfo);
                     break;
                 case PatchMode.GKI:
-                    //newboot = await KernelSUPatch.GKI_Patch(Global.Zipinfo, Global.Bootinfo);
+                    newboot = await KernelSUPatch.GKI_Patch(Global.Zipinfo, Global.Bootinfo);
                     break;
                 case PatchMode.LKM:
                     newboot = await KernelSUPatch.LKM_Patch(Global.Zipinfo, Global.Bootinfo);
                     break;
-                    //throw new Exception(GetTranslation("Basicflash_CantKSU"));
+                    throw new Exception(GetTranslation("Basicflash_CantKSU"));
             }
             Global.MainDialogManager.CreateDialog()
                                         .WithTitle(GetTranslation("Common_Succ"))
                                         .WithContent(GetTranslation("Basicflash_PatchDone"))
+                                        .OfType(NotificationType.Success)
                                         .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ => await FlashBoot(newboot), true)
                                         .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => FileHelper.OpenFolder(Path.GetDirectoryName(Global.Bootinfo.Path)), true)
                                         .TryShow();
@@ -643,6 +642,7 @@ public partial class BasicflashView : UserControl
                     Global.MainDialogManager.CreateDialog()
                                                 .WithTitle(GetTranslation("Common_Succ"))
                                                 .WithContent(GetTranslation("Basicflash_BootFlashSucc"))
+                                                .OfType(NotificationType.Success)
                                                 .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ => await CallExternalProgram.Fastboot($"-s {Global.thisdevice} reboot"), true)
                                                 .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
                                                 .TryShow();
@@ -732,8 +732,8 @@ public partial class BasicflashView : UserControl
                     }
                 }
                 Global.MainDialogManager.CreateDialog()
-                                            .WithTitle(GetTranslation("Common_Error"))
-                                            .OfType(NotificationType.Error)
+                                            .WithTitle(GetTranslation("Common_Execution"))
+                                            .OfType(NotificationType.Information)
                                             .WithContent(GetTranslation("Common_Execution"))
                                             .Dismiss().ByClickingBackground()
                                             .TryShow();
@@ -749,13 +749,14 @@ public partial class BasicflashView : UserControl
                                             .Dismiss().ByClickingBackground()
                                             .TryShow();
             }
-            if (sukiViewModel.Status == GetTranslation("Home_System"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android"))
             {
                 if (MagiskFile.Text != null)
                 {
                     Global.MainDialogManager.CreateDialog()
                                                 .WithTitle(GetTranslation("Common_Warn"))
                                                 .WithContent(GetTranslation("Basicflash_PushMagisk"))
+                                                .OfType(NotificationType.Warning)
                                                 .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ =>
                                                 {
                                                     BusyInstall.IsBusy = true;
@@ -846,8 +847,8 @@ public partial class BasicflashView : UserControl
                 }
             }
             Global.MainDialogManager.CreateDialog()
-                                        .WithTitle(GetTranslation("Common_Error"))
-                                        .OfType(NotificationType.Error)
+                                        .WithTitle(GetTranslation("Common_Execution"))
+                                        .OfType(NotificationType.Information)
                                         .WithContent(GetTranslation("Common_Execution"))
                                         .Dismiss().ByClickingBackground()
                                         .TryShow();
@@ -916,8 +917,8 @@ public partial class BasicflashView : UserControl
                 }
             }
             Global.MainDialogManager.CreateDialog()
-                                        .WithTitle(GetTranslation("Common_Error"))
-                                        .OfType(NotificationType.Error)
+                                        .WithTitle(GetTranslation("Common_Execution"))
+                                        .OfType(NotificationType.Information)
                                         .WithContent(GetTranslation("Common_Execution"))
                                         .Dismiss().ByClickingBackground()
                                         .TryShow();

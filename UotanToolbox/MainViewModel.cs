@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Avalonia.Collections;
 using Avalonia.Controls.Notifications;
 using Avalonia.Styling;
@@ -14,6 +8,10 @@ using SukiUI.Dialogs;
 using SukiUI.Enums;
 using SukiUI.Models;
 using SukiUI.Toasts;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using UotanToolbox.Common;
 using UotanToolbox.Features;
 using UotanToolbox.Features.Settings;
@@ -55,7 +53,7 @@ public partial class MainViewModel : ObservableObject
     public MainViewModel(IEnumerable<MainPageBase> demoPages, PageNavigationService nav, ISukiToastManager toastManager, ISukiDialogManager dialogManager)
     {
         Global.MainToastManager = ToastManager = toastManager;
-        Global.MainDialogManager =  DialogManager = dialogManager;
+        Global.MainDialogManager = DialogManager = dialogManager;
         Status = "--"; CodeName = "--"; BLStatus = "--"; VABStatus = "--";
         DemoPages = new AvaloniaList<MainPageBase>(demoPages.OrderBy(x => x.Index).ThenBy(x => x.DisplayName));
         _theming = (SettingsViewModel)DemoPages.First(x => x is SettingsViewModel);
@@ -127,13 +125,17 @@ public partial class MainViewModel : ObservableObject
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot");
             }
             else if (sukiViewModel.Status == GetTranslation("Home_Fastboot") || sukiViewModel.Status == GetTranslation("Home_Fastbootd"))
             {
                 await CallExternalProgram.Fastboot($"-s {Global.thisdevice} reboot");
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot");
             }
             else
             {
@@ -152,7 +154,7 @@ public partial class MainViewModel : ObservableObject
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot recovery");
             }
@@ -163,6 +165,10 @@ public partial class MainViewModel : ObservableObject
                 {
                     await CallExternalProgram.Fastboot($"-s {Global.thisdevice} flash misc {Global.runpath}/Image/misc.img");
                     await CallExternalProgram.Fastboot($"-s {Global.thisdevice} reboot");
+                }
+                else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+                {
+                    await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot -recovery");
                 }
                 else
                 {
@@ -186,13 +192,17 @@ public partial class MainViewModel : ObservableObject
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot bootloader");
             }
             else if (sukiViewModel.Status == GetTranslation("Home_Fastboot") || sukiViewModel.Status == GetTranslation("Home_Fastbootd"))
             {
                 await CallExternalProgram.Fastboot($"-s {Global.thisdevice} reboot-bootloader");
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot -bootloader");
             }
             else
             {
@@ -211,13 +221,17 @@ public partial class MainViewModel : ObservableObject
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot fastboot");
             }
             else if (sukiViewModel.Status == GetTranslation("Home_Fastboot") || sukiViewModel.Status == GetTranslation("Home_Fastbootd"))
             {
                 await CallExternalProgram.Fastboot($"-s {Global.thisdevice} reboot-fastboot");
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot -fastboot");
             }
             else
             {
@@ -236,9 +250,13 @@ public partial class MainViewModel : ObservableObject
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} disconnect");
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"tconn {Global.thisdevice} -remove");
             }
             else
             {
@@ -255,6 +273,7 @@ public partial class MainViewModel : ObservableObject
     public async Task RestartADB()
     {
         await CallExternalProgram.ADB("kill-server");
+        await CallExternalProgram.HDC("kill -r");
     }
 
     [RelayCommand]

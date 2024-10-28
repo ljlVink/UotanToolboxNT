@@ -1,15 +1,6 @@
 ﻿using Avalonia.Collections;
 using SukiUI.Dialogs;
 using SukiUI.Toasts;
-using UotanToolbox.Features.Appmgr;
-using UotanToolbox.Features.Basicflash;
-using UotanToolbox.Features.Customizedflash;
-using UotanToolbox.Features.FormatExtract;
-using UotanToolbox.Features.Home;
-using UotanToolbox.Features.Modifypartition;
-using UotanToolbox.Features.Others;
-using UotanToolbox.Features.Scrcpy;
-using UotanToolbox.Features.Wiredflash;
 
 namespace UotanToolbox.Common
 {
@@ -24,6 +15,7 @@ namespace UotanToolbox.Common
         public static string System = "Windows";
         public static string serviceID = null;
         public static string password = null;
+        public static bool root = true;
         public static AvaloniaList<string> deviceslist;
         public static string thisdevice = null;
         public static ZipInfo Zipinfo = new ZipInfo("", "", "", "", "", false, PatchMode.None, "");

@@ -1,14 +1,14 @@
-﻿using System.Diagnostics;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using SukiUI.Dialogs;
 using SukiUI.Toasts;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using UotanToolbox.Common;
 
 namespace UotanToolbox.Features.Customizedflash;
@@ -57,7 +57,7 @@ public partial class CustomizedflashView : UserControl
             {
                 StringBuilder sb = new StringBuilder(CustomizedflashLog.Text);
                 CustomizedflashLog.Text = sb.AppendLine(outLine.Data).ToString();
-                CustomizedflashLog.ScrollToLine(StringHelper.TextBoxLine(CustomizedflashLog.Text));
+                CustomizedflashLog.CaretIndex = CustomizedflashLog.Text.Length;
             });
         }
     }

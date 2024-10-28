@@ -1,7 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
-using Avalonia.Controls.Notifications;
+﻿using Avalonia.Controls.Notifications;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -9,13 +6,11 @@ using Material.Icons;
 using Microsoft.VisualBasic;
 using ReactiveUI;
 using SukiUI.Dialogs;
-using SukiUI.Controls;
-using SukiUI.Enums;
+using SukiUI.Toasts;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using UotanToolbox.Common;
-using SukiUI.Toasts;
 
 namespace UotanToolbox.Features.Scrcpy;
 
@@ -42,7 +37,6 @@ public partial class ScrcpyViewModel : MainPageBase
             {
                 if (!jug)
                 {
-                    ScreenAwakeStatus = false;
                     ScreenAwake = false;
                 }
                 else
@@ -60,7 +54,7 @@ public partial class ScrcpyViewModel : MainPageBase
             if (await GetDevicesInfo.SetDevicesInfoLittle())
             {
                 MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-                if (sukiViewModel.Status == GetTranslation("Home_System"))
+                if (sukiViewModel.Status == GetTranslation("Home_Android"))
                 {
                     IsConnecting = true;
                     await Dispatcher.UIThread.InvokeAsync(async () =>
@@ -158,7 +152,7 @@ public partial class ScrcpyViewModel : MainPageBase
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} {shell}");
             }
@@ -200,7 +194,7 @@ public partial class ScrcpyViewModel : MainPageBase
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android"))
             {
                 string pngname = String.Format($"{DateAndTime.Now:yyyy-MM-dd_HH-mm-ss}");
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} shell /system/bin/screencap -p /sdcard/{pngname}.png");

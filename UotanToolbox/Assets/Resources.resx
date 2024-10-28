@@ -126,9 +126,6 @@
   <data name="Home_AdbRebootTo" xml:space="preserve">
     <value>ADB reboot to</value>
   </data>
-  <data name="Home_SystemSDK" xml:space="preserve">
-    <value>System SDK</value>
-  </data>
   <data name="Home_BackButton" xml:space="preserve">
     <value>Back</value>
   </data>
@@ -154,7 +151,7 @@
     <value>Code Name</value>
   </data>
   <data name="Home_CompiledVersion" xml:space="preserve">
-    <value>Incremental Version</value>
+    <value>Build Version</value>
   </data>
   <data name="Home_ConnectionStatus" xml:space="preserve">
     <value>DeviceStatus</value>
@@ -268,7 +265,7 @@
     <value>The device has been disconnected</value>
   </data>
   <data name="Common_EnterRecOrOpenADB" xml:space="preserve">
-    <value>Please enter Recovery mode or enable USB debugging!</value>
+    <value>Please enter Recovery mode or enable USB debugging in the Android system!</value>
   </data>
   <data name="Common_NotConnected" xml:space="preserve">
     <value>Device not connected!</value>
@@ -625,7 +622,7 @@
     <value>Read Part</value>
   </data>
   <data name="Modifypartition_RemoveLimit" xml:space="preserve">
-    <value>Remove limit</value>
+    <value>Remove limit of partition</value>
   </data>
   <data name="Modifypartition_StartpointColon" xml:space="preserve">
     <value>Start:</value>
@@ -661,7 +658,7 @@
     <value>Switch slot</value>
   </data>
   <data name="Appmgr_ApkFile" xml:space="preserve">
-    <value>Apk File</value>
+    <value>App File</value>
   </data>
   <data name="Appmgr_ApplicationListHasntBeenFetched" xml:space="preserve">
     <value>Application list hasn't been fetched</value>
@@ -682,7 +679,7 @@
     <value>Extract Apk</value>
   </data>
   <data name="Appmgr_FetchApplicationList" xml:space="preserve">
-    <value>Fetch application list</value>
+    <value>Fetch List</value>
   </data>
   <data name="Appmgr_Fetching" xml:space="preserve">
     <value>Fetching</value>
@@ -963,9 +960,6 @@
   <data name="Common_EnterRecovery" xml:space="preserve">
     <value>Please enter Recovery mode!</value>
   </data>
-  <data name="Appmgr_PleaseExecuteInSystem" xml:space="preserve">
-    <value>Please execute in system</value>
-  </data>
   <data name="Common_DeviceFailedToConnect" xml:space="preserve">
     <value>Device is failed to connect</value>
   </data>
@@ -1174,7 +1168,8 @@
     <value>This operation requires ROOT permission. Please ensure that your phone has ROOT and grant Shell ROOT permission in the following pop-up window!</value>
   </data>
   <data name="Common_OpenADB" xml:space="preserve">
-    <value>Please enter the system and enable USB debugging!</value>
+    <value>Please enter the Android system and enable USB debugging!
+*Not currently supporting the OpenHarmony devices!</value>
   </data>
   <data name="FormatExtract_BackingUp" xml:space="preserve">
     <value>Backing up...</value>
@@ -1396,10 +1391,7 @@
     <value>Wired to wireless conversion</value>
   </data>
   <data name="Home_WirelessADB" xml:space="preserve">
-    <value>Wireless ADB</value>
-  </data>
-  <data name="Home_WirelessADBTitle" xml:space="preserve">
-    <value>Wireless ADB Connection</value>
+    <value>Wireless Connection</value>
   </data>
   <data name="Main_CanResize" xml:space="preserve">
     <value>Unlock the window height lock</value>
@@ -1414,13 +1406,13 @@
     <value>Please enter all the content!</value>
   </data>
   <data name="MainView_ADB" xml:space="preserve">
-    <value>ADB Services</value>
+    <value>ADB/HDC Services</value>
   </data>
   <data name="MainView_Disconnect" xml:space="preserve">
     <value>Try Disconnect</value>
   </data>
   <data name="MainView_RestartADB" xml:space="preserve">
-    <value>Restart ADB</value>
+    <value>Restart Services</value>
   </data>
   <data name="WirelessADB_Connect" xml:space="preserve">
     <value>Connection successful!</value>
@@ -1439,5 +1431,57 @@
   </data>
   <data name="Basicflash_Reboot" xml:space="preserve">
     <value>Reboot to</value>
+  </data>
+  <data name="Home_Android" xml:space="preserve">
+    <value>Android</value>
+  </data>
+  <data name="Home_OpenHOS" xml:space="preserve">
+    <value>OpenHarmony</value>
+  </data>
+  <data name="Common_ADBRoot" xml:space="preserve">
+    <value>ADB device detected, but it seems that the current system has not written relevant USB rules. Should you try to execute with root privileges?</value>
+  </data>
+  <data name="Common_HDCRoot" xml:space="preserve">
+    <value>HDC device detected, but it seems that the current system has not written relevant USB rules. Should you try to execute with root privileges?</value>
+  </data>
+  <data name="ConnectionDialog_GetUpdate" xml:space="preserve">
+    <value>Get Update</value>
+  </data>
+  <data name="Appmgr_SearchApp" xml:space="preserve">
+    <value>Search for the application you want</value>
+  </data>
+  <data name="ConnectionDialog_Updates" xml:space="preserve">
+    <value>New version discovered, it is recommended to update as soon as possible!</value>
+  </data>
+  <data name="ConnectionDialog_ViewUpdates" xml:space="preserve">
+    <value>View Updates</value>
+  </data>
+  <data name="Appmgr_SearchWait" xml:space="preserve">
+    <value>Wait for all applications to load</value>
+  </data>
+  <data name="Common_OpenADBOrHDC" xml:space="preserve">
+    <value>Please enter the Android or OpenHarmony system and enable USB debugging</value>
+  </data>
+  <data name="Home_CheckDevice" xml:space="preserve">
+    <value>No device connection detected.
+If in Android or HarmonyOS system, please ensure that the device has enabled USB debugging. 
+If in other modes, please ensure that the driver is installed correctly.</value>
+  </data>
+  <data name="Settings_OpenSource" xml:space="preserve">
+    <value>Open source project</value>
+  </data>
+  <data name="Wiredflash_AddMagisk" xml:space="preserve">
+    <value>Add  Magisk</value>
+  </data>
+  <data name="Wiredflash_AddRootTip" xml:space="preserve">
+    <value>Checking this option will default to using the built-in Magisk in the toolbox to patch Boot, and the version will be consistent with the default display on the Basic Flash page. 
+If you wish to replace Magisk, please first select your Magisk on the Basic Flash page, confirm that the toolbox supports this version of Magisk, and then replace it with the Magisk.apk file in the APK folder of the toolbox directory.
+*Only valid when the ROM uses the original Boot image!</value>
+  </data>
+  <data name="Wiredflash_OpenAPK" xml:space="preserve">
+    <value>Open APK directory</value>
+  </data>
+  <data name="Wiredflash_RepairBoot" xml:space="preserve">
+    <value>Repairing Boot image......</value>
   </data>
 </root>

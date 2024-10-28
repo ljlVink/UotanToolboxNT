@@ -1,20 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Avalonia.Collections;
+﻿using Avalonia.Collections;
 using Avalonia.Controls.Notifications;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Material.Icons;
+using Newtonsoft.Json;
 using ReactiveUI;
-using Splat;
-using SukiUI.Controls;
 using SukiUI.Dialogs;
 using SukiUI.Toasts;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using UotanToolbox.Common;
+using UotanToolbox.Features.Settings;
+using UotanToolbox.Utilities;
 
 namespace UotanToolbox.Features.Home;
 
@@ -44,7 +44,7 @@ public partial class HomeViewModel : MainPageBase
     public HomeViewModel() : base(GetTranslation("Sidebar_HomePage"), MaterialIconKind.HomeOutline, int.MinValue)
     {
         _ = CheckDeviceList();
-        _ = this.WhenAnyValue(x => x.SelectedSimpleContent)
+        this.WhenAnyValue(x => x.SelectedSimpleContent)
             .Subscribe(option =>
             {
                 if (option != null && option != Global.thisdevice && SimpleContent != null && SimpleContent.Count != 0)
@@ -53,6 +53,75 @@ public partial class HomeViewModel : MainPageBase
                     _ = ConnectCore();
                 }
             });
+        _ = CheckForUpdate();
+    }
+
+    public async Task CheckForUpdate()
+    {
+        try
+        {
+            using HttpClient client = new HttpClient();
+            string url = "https://toolbox.uotan.cn/api/list";
+            StringContent content = new StringContent("{}", System.Text.Encoding.UTF8);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            HttpResponseMessage response = await client.PostAsync(url, content);
+            _ = response.EnsureSuccessStatusCode();
+            string responseBody = await response.Content.ReadAsStringAsync();
+
+            dynamic convertedBody = JsonConvert.DeserializeObject<dynamic>(responseBody);
+            SettingsViewModel vm = new SettingsViewModel();
+            string version = convertedBody.release_version;
+
+
+
+            if (version.Contains("beta"))
+            {
+                if (convertedBody.beta_version != vm.CurrentVersion)
+                {
+                    string serializedContent = (String)JsonConvert.SerializeObject(convertedBody.beta_content).Replace("\\n", "\n");
+                    if (serializedContent.Length > 1) serializedContent = serializedContent.Substring(1, serializedContent.Length - 2);
+                    Global.MainToastManager.CreateToast()
+                          .OfType(NotificationType.Information)
+                          .WithTitle(GetTranslation("Settings_NewVersionAvailable"))
+                          .WithContent(GetTranslation("ConnectionDialog_Updates"))
+                          .WithActionButtonNormal(GetTranslation("ConnectionDialog_ViewUpdates"), _ =>
+                              Global.MainDialogManager.CreateDialog()
+                                    .WithTitle(GetTranslation("Settings_NewVersionAvailable"))
+                                    .WithContent(serializedContent)
+                                    .OfType(NotificationType.Information)
+                                    .WithActionButton(GetTranslation("ConnectionDialog_GetUpdate"), _ => UrlUtilities.OpenURL("https://toolbox.uotan.cn"), true)
+                                    .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
+                                    .TryShow(), true)
+                          .WithActionButtonNormal(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
+                          .Queue();
+                }
+                else Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Settings_UpToDate")).Dismiss().ByClickingBackground().TryShow();
+            }
+            else
+            {
+                if (convertedBody.release_version != vm.CurrentVersion)
+                {
+                    string serializedContent = (String)JsonConvert.SerializeObject(convertedBody.release_content).Replace("\\n", "\n");
+                    if (serializedContent.Length > 1) serializedContent = serializedContent.Substring(1, serializedContent.Length - 2);
+                    Global.MainToastManager.CreateToast()
+                          .OfType(NotificationType.Information)
+                          .WithTitle(GetTranslation("Settings_NewVersionAvailable"))
+                          .WithContent(GetTranslation("ConnectionDialog_Updates"))
+                          .WithActionButtonNormal(GetTranslation("ConnectionDialog_ViewUpdates"), _ =>
+                              Global.MainDialogManager.CreateDialog()
+                                    .WithTitle(GetTranslation("Settings_NewVersionAvailable"))
+                                    .WithContent(serializedContent)
+                                    .OfType(NotificationType.Information)
+                                    .WithActionButton(GetTranslation("ConnectionDialog_GetUpdate"), _ => UrlUtilities.OpenURL("https://toolbox.uotan.cn"), true)
+                                    .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
+                                    .TryShow(), true)
+                          .WithActionButtonNormal(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
+                          .Queue();
+                }
+                else Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Settings_UpToDate")).Dismiss().ByClickingBackground().TryShow();
+            }
+        }
+        catch (HttpRequestException e) { }
     }
 
     public async Task CheckDeviceList()
@@ -129,7 +198,7 @@ public partial class HomeViewModel : MainPageBase
         }
         else
         {
-            Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_NotConnected")).Dismiss().ByClickingBackground().TryShow();
+            Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Home_CheckDevice")).Dismiss().ByClickingBackground().TryShow();
             return false;
         }
     }
@@ -169,6 +238,7 @@ public partial class HomeViewModel : MainPageBase
     [RelayCommand]
     public async Task FreshDeviceList()
     {
+        Global.root = true;
         AvaloniaList<string> OldDeviceList = Global.deviceslist;
         if (await GetDevicesList() && Global.thisdevice != null && string.Join("", Global.deviceslist).Contains(Global.thisdevice))
         {
@@ -187,13 +257,17 @@ public partial class HomeViewModel : MainPageBase
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot");
             }
             else if (sukiViewModel.Status == GetTranslation("Home_Fastboot") || sukiViewModel.Status == GetTranslation("Home_Fastbootd"))
             {
                 await CallExternalProgram.Fastboot($"-s {Global.thisdevice} reboot");
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot");
             }
             else
             {
@@ -212,7 +286,7 @@ public partial class HomeViewModel : MainPageBase
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot recovery");
             }
@@ -228,6 +302,10 @@ public partial class HomeViewModel : MainPageBase
                 {
                     _ = await CallExternalProgram.Fastboot($"-s {Global.thisdevice} reboot recovery");
                 }
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot -recovery");
             }
             else
             {
@@ -246,13 +324,17 @@ public partial class HomeViewModel : MainPageBase
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot bootloader");
             }
             else if (sukiViewModel.Status == GetTranslation("Home_Fastboot") || sukiViewModel.Status == GetTranslation("Home_Fastbootd"))
             {
                 await CallExternalProgram.Fastboot($"-s {Global.thisdevice} reboot-bootloader");
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot -bootloader");
             }
             else
             {
@@ -271,13 +353,17 @@ public partial class HomeViewModel : MainPageBase
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot fastboot");
             }
             else if (sukiViewModel.Status == GetTranslation("Home_Fastboot") || sukiViewModel.Status == GetTranslation("Home_Fastbootd"))
             {
                 await CallExternalProgram.Fastboot($"-s {Global.thisdevice} reboot-fastboot");
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot -fastboot");
             }
             else
             {
@@ -296,7 +382,7 @@ public partial class HomeViewModel : MainPageBase
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot -p");
             }
@@ -305,7 +391,11 @@ public partial class HomeViewModel : MainPageBase
                 string output = await CallExternalProgram.Fastboot($"-s {Global.thisdevice} oem poweroff");
                 _ = output.Contains("unknown command")
                     ? Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Home_NotSupported")).Dismiss().ByClickingBackground().TryShow()
-                    : Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Home_Successful")).Dismiss().ByClickingBackground().TryShow();
+                    : Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Succ")).OfType(NotificationType.Success).WithContent(GetTranslation("Home_Successful")).Dismiss().ByClickingBackground().TryShow();
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot shutdown");
             }
             else
             {
@@ -324,13 +414,17 @@ public partial class HomeViewModel : MainPageBase
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == GetTranslation("Home_System") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
+            if (sukiViewModel.Status == GetTranslation("Home_Android") || sukiViewModel.Status == GetTranslation("Home_Recovery") || sukiViewModel.Status == GetTranslation("Home_Sideload"))
             {
                 await CallExternalProgram.ADB($"-s {Global.thisdevice} reboot edl");
             }
             else if (sukiViewModel.Status == GetTranslation("Home_Fastboot") || sukiViewModel.Status == GetTranslation("Home_Fastbootd"))
             {
                 await CallExternalProgram.Fastboot($"-s {Global.thisdevice} oem edl");
+            }
+            else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+            {
+                await CallExternalProgram.HDC($"-t {Global.thisdevice} target boot -edl");
             }
             else
             {

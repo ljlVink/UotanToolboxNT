@@ -1,16 +1,17 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using SukiUI.Dialogs;
 using SukiUI.Toasts;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
 using UotanToolbox.Common;
+using UotanToolbox.Common.PatchHelper;
 
 
 namespace UotanToolbox.Features.Wiredflash;
@@ -133,7 +134,7 @@ public partial class WiredflashView : UserControl
             {
                 StringBuilder sb = new StringBuilder(WiredflashLog.Text);
                 WiredflashLog.Text = sb.AppendLine(outLine.Data).ToString();
-                WiredflashLog.ScrollToLine(StringHelper.TextBoxLine(WiredflashLog.Text));
+                WiredflashLog.CaretIndex = WiredflashLog.Text.Length;
                 StringBuilder op = new StringBuilder(output);
                 output = op.AppendLine(outLine.Data).ToString();
             });
@@ -182,6 +183,17 @@ public partial class WiredflashView : UserControl
         }
     }
 
+    private async void CheckRoot(object sender, RoutedEventArgs args)
+    {
+        Global.MainDialogManager.CreateDialog()
+                            .WithTitle(GetTranslation("Home_Prompt"))
+                            .WithContent(GetTranslation("Wiredflash_AddRootTip"))
+                            .OfType(NotificationType.Information)
+                            .WithActionButton(GetTranslation("Wiredflash_OpenAPK"), _ => FileHelper.OpenFolder(Path.Combine(Global.runpath, "APK")), true)
+                            .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), _ => { }, true)
+                            .TryShow();
+    }
+
     public void TXTFlashBusy(bool is_busy)
     {
         if (is_busy)
@@ -216,7 +228,7 @@ public partial class WiredflashView : UserControl
                     string imgpath;
                     if (fbtxt != "")
                     {
-                        imgpath = fbtxt[..fbtxt.LastIndexOf("/")] + "/images";
+                        imgpath = fbtxt[..fbtxt.LastIndexOf('/')] + "/images";
                         string fbparts = FileHelper.Readtxt(fbtxt);
                         char[] charSeparators = new char[] { '\r', '\n' };
                         string[] fbflashparts = fbparts.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
@@ -239,8 +251,29 @@ public partial class WiredflashView : UserControl
                         }
                         for (int i = 0 + c; i < fbflashparts.Length; i++)
                         {
-                            string shell = string.Format($"-s {Global.thisdevice} flash {fbflashparts[i]} \"{imgpath}/{fbflashparts[i]}.img\"");
-                            await Fastboot(shell);
+                            if (fbflashparts[i].Contains(' '))
+                            {
+                                string[] partandpath = fbflashparts[i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                                string shell = string.Format($"-s {Global.thisdevice} flash {partandpath[0]} \"{fbtxt[..fbtxt.LastIndexOf('/')]}{partandpath[1]}\"");
+                                await Fastboot(shell);
+                            }
+                            else
+                            {
+                                if (fbflashparts[i] == "boot" && (bool)AddRoot.IsChecked)
+                                {
+                                    WiredflashLog.Text += GetTranslation("Wiredflash_RepairBoot");
+                                    Global.Bootinfo = await BootDetect.Boot_Detect($"{imgpath}/{fbflashparts[i]}.img");
+                                    Global.Zipinfo = await ZipDetect.Zip_Detect(Path.Combine(Global.runpath, "APK", "Magisk.apk"));
+                                    string newboot = await MagiskPatch.Magisk_Patch(Global.Zipinfo, Global.Bootinfo);
+                                    string shell = string.Format($"-s {Global.thisdevice} flash boot {newboot}");
+                                    await Fastboot(shell);
+                                }
+                                else
+                                {
+                                    string shell = string.Format($"-s {Global.thisdevice} flash {fbflashparts[i]} \"{imgpath}/{fbflashparts[i]}.img\"");
+                                    await Fastboot(shell);
+                                }
+                            }
                             FileHelper.Write(adb_log_path, output);
                             if (output.Contains("FAILED") || output.Contains("error"))
                             {
@@ -264,7 +297,7 @@ public partial class WiredflashView : UserControl
                             }
                             _ = await GetDevicesInfo.SetDevicesInfoLittle();
                         }
-                        imgpath = fbdtxt[..fbdtxt.LastIndexOf("/")] + "/images";
+                        imgpath = fbdtxt[..fbdtxt.LastIndexOf('/')] + "/images";
                         string fbdparts = FileHelper.Readtxt(fbdtxt);
                         char[] charSeparators = new char[] { '\r', '\n' };
                         string[] fbdflashparts = fbdparts.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
@@ -348,9 +381,19 @@ public partial class WiredflashView : UserControl
                         {
                             for (int i = 0 + c; i < fbdflashparts.Length; i++)
                             {
-                                string deletepart = string.Format("{0}{1}", fbdflashparts[i], slot);
-                                string shell = string.Format($"-s {Global.thisdevice} delete-logical-partition {deletepart}");
-                                await Fastboot(shell);
+                                if (fbdflashparts[i].Contains(' '))
+                                {
+                                    string[] partandpath = fbdflashparts[i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                                    string deletepart = string.Format("{0}{1}", partandpath[0], slot);
+                                    string shell = string.Format($"-s {Global.thisdevice} delete-logical-partition {deletepart}");
+                                    await Fastboot(shell);
+                                }
+                                else
+                                {
+                                    string deletepart = string.Format("{0}{1}", fbdflashparts[i], slot);
+                                    string shell = string.Format($"-s {Global.thisdevice} delete-logical-partition {deletepart}");
+                                    await Fastboot(shell);
+                                }
                                 FileHelper.Write(adb_log_path, output);
                                 if (output.Contains("FAILED") || output.Contains("error"))
                                 {
@@ -363,9 +406,19 @@ public partial class WiredflashView : UserControl
                         {
                             for (int i = 0 + c; i < fbdflashparts.Length; i++)
                             {
-                                string makepart = string.Format("{0}{1}", fbdflashparts[i], slot);
-                                string shell = string.Format($"-s {Global.thisdevice} create-logical-partition {makepart} 00");
-                                await Fastboot(shell);
+                                if (fbdflashparts[i].Contains(' '))
+                                {
+                                    string[] partandpath = fbdflashparts[i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                                    string makepart = string.Format("{0}{1}", partandpath[0], slot);
+                                    string shell = string.Format($"-s {Global.thisdevice} create-logical-partition {makepart} 00");
+                                    await Fastboot(shell);
+                                }
+                                else
+                                {
+                                    string makepart = string.Format("{0}{1}", fbdflashparts[i], slot);
+                                    string shell = string.Format($"-s {Global.thisdevice} create-logical-partition {makepart} 00");
+                                    await Fastboot(shell);
+                                }
                                 FileHelper.Write(adb_log_path, output);
                                 if (output.Contains("FAILED") || output.Contains("error"))
                                 {
@@ -378,8 +431,17 @@ public partial class WiredflashView : UserControl
                         {
                             for (int i = 0 + c; i < fbdflashparts.Length; i++)
                             {
-                                string shell = string.Format($"-s {Global.thisdevice} flash {fbdflashparts[i]} \"{imgpath}/{fbdflashparts[i]}.img\"");
-                                await Fastboot(shell);
+                                if (fbdflashparts[i].Contains(' '))
+                                {
+                                    string[] partandpath = fbdflashparts[i].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                                    string shell = string.Format($"-s {Global.thisdevice} flash {partandpath[0]} \"{fbdtxt[..fbdtxt.LastIndexOf('/')]}{partandpath[1]}\"");
+                                    await Fastboot(shell);
+                                }
+                                else
+                                {
+                                    string shell = string.Format($"-s {Global.thisdevice} flash {fbdflashparts[i]} \"{imgpath}/{fbdflashparts[i]}.img\"");
+                                    await Fastboot(shell);
+                                }
                                 FileHelper.Write(adb_log_path, output);
                                 if (output.Contains("FAILED") || output.Contains("error"))
                                 {
@@ -399,6 +461,7 @@ public partial class WiredflashView : UserControl
                         Global.MainDialogManager.CreateDialog()
                             .WithTitle(GetTranslation("Common_Succ"))
                             .WithContent(GetTranslation("Wiredflash_ROMFlash"))
+                            .OfType(NotificationType.Success)
                             .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ => await Fastboot($"-s {Global.thisdevice} reboot"), true)
                             .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
                             .TryShow();
@@ -561,7 +624,7 @@ public partial class WiredflashView : UserControl
                     WiredflashLog.Text = "";
                     string shell = string.Format($"-s {Global.thisdevice} sideload \"{AdbSideloadFile.Text}\"");
                     await ADB(shell);
-                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
+                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Execution")).OfType(NotificationType.Information).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
                     MoreFlashBusy(false);
                 }
                 else
@@ -578,7 +641,7 @@ public partial class WiredflashView : UserControl
                     WiredflashLog.Text = "";
                     string shell = string.Format($"-s {Global.thisdevice} update \"{FastbootUpdatedFile.Text}\"");
                     await Fastboot(shell);
-                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
+                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Execution")).OfType(NotificationType.Information).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
                     MoreFlashBusy(false);
                 }
                 else
@@ -601,7 +664,7 @@ public partial class WiredflashView : UserControl
                     {
                         await RunSH(BatFile.Text);
                     }
-                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
+                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Execution")).OfType(NotificationType.Information).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
                     MoreFlashBusy(false);
                 }
                 else

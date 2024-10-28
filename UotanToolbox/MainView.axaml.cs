@@ -1,7 +1,3 @@
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.InteropServices;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -10,6 +6,10 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using SukiUI.Controls;
 using SukiUI.Models;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 using UotanToolbox.Common;
 using UotanToolbox.Features.Settings;
 
@@ -22,7 +22,19 @@ public partial class MainView : SukiWindow
         InitializeComponent();
         Bitmap bitmap = new Bitmap(AssetLoader.Open(new Uri("avares://UotanToolbox/Assets/OIG.N5o-removebg-preview.png")));
         Icon = new WindowIcon(bitmap);
+        SetSystemDecorationsBasedOnPlatform();
+    }
 
+    private void SetSystemDecorationsBasedOnPlatform()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            this.SystemDecorations = SystemDecorations.BorderOnly;
+        }
+        else
+        {
+            this.SystemDecorations = SystemDecorations.Full;
+        }
     }
 
     private void MenuItem_OnClick(object sender, RoutedEventArgs e)

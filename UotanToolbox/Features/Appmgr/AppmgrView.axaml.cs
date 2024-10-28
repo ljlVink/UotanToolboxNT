@@ -1,11 +1,11 @@
-﻿using System.Threading.Tasks;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using SukiUI.Dialogs;
 using SukiUI.Toasts;
+using System.Threading.Tasks;
 using UotanToolbox.Common;
 
 namespace UotanToolbox.Features.Appmgr;
@@ -34,10 +34,30 @@ public partial class AppmgrView : UserControl
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
             Global.MainDialogManager.CreateDialog()
-                         .OfType(NotificationType.Error)
+                         .OfType(NotificationType.Warning)
                          .WithTitle(GetTranslation("Common_Warn"))
                          .WithContent(GetTranslation("Appmgr_ConfirmDeleteApp"))
-                         .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ => await CallExternalProgram.ADB($"-s {Global.thisdevice} shell pm uninstall -k --user 0 {packageName}"), true)
+                         .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ =>
+                         {
+                             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
+                             if (sukiViewModel.Status == GetTranslation("Home_Android"))
+                             {
+                                 await CallExternalProgram.ADB($"-s {Global.thisdevice} shell pm uninstall -k --user 0 {packageName}");
+                             }
+                             else if (sukiViewModel.Status == GetTranslation("Home_OpenHOS"))
+                             {
+                                 await CallExternalProgram.HDC($"-t {Global.thisdevice} app uninstall {packageName}");
+                             }
+                             else
+                             {
+                                 Global.MainDialogManager.CreateDialog()
+                                       .OfType(NotificationType.Error)
+                                       .WithTitle(GetTranslation("Common_Error"))
+                                       .WithContent(GetTranslation("Common_OpenADBOrHDC"))
+                                       .Dismiss().ByClickingBackground()
+                                       .TryShow();
+                             }
+                         }, true)
                          .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
                          .TryShow();
 
@@ -47,9 +67,10 @@ public partial class AppmgrView : UserControl
     }
 
 
-    private static FilePickerFileType ApkPicker { get; } = new("APK File")
+    private static FilePickerFileType ApkPicker { get; } = new("APP File")
     {
-        Patterns = new[] { "*.apk" }
+        Patterns = new[] { "*.apk", "*.hap" },
+        AppleUniformTypeIdentifiers = new[] { "*.apk", "*.hap" }
     };
 
     private async void OpenApkFile(object sender, RoutedEventArgs args)

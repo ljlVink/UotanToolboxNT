@@ -1,10 +1,10 @@
-﻿using System;
+﻿using SharpCompress.Archives;
+using SharpCompress.Common;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using SharpCompress.Archives;
-using SharpCompress.Common;
 
 namespace UotanToolbox.Common.PatchHelper
 {
@@ -15,7 +15,7 @@ namespace UotanToolbox.Common.PatchHelper
             return FeaturesHelper.GetTranslation(key);
         }
 
-        public  async Task<ZipInfo> Zip_Detect(string path)
+        public static async Task<ZipInfo> Zip_Detect(string path)
         {
             string kmi;
             ZipInfo Zipinfo = new ZipInfo("", "", "", "", "", false, PatchMode.None, "")
@@ -24,7 +24,7 @@ namespace UotanToolbox.Common.PatchHelper
             };
             Zipinfo.SHA1 = await FileHelper.SHA1HashAsync(Zipinfo.Path);
             Zipinfo.TempPath = Path.Combine(Global.tmp_path, "Zip-" + StringHelper.RandomString(8));
-            bool istempclean = true; //FileHelper.ClearFolder(Zipinfo.TempPath);
+            bool istempclean = FileHelper.ClearFolder(Zipinfo.TempPath);
             if (!istempclean)
             {
                 throw new Exception(GetTranslation("Basicflash_FatalError"));
@@ -106,18 +106,23 @@ namespace UotanToolbox.Common.PatchHelper
         {
             Dictionary<string, string> version_dict = new Dictionary<string, string>
             {
-            {"872199f3781706f51b84d8a89c1d148d26bcdbad" , "27000"},
-            {"dc7db76b5fb895d34b7274abb6ca59b56590a784" , "26400"},
-            {"d052b0e1c1a83cb25739eb87471ba6d8791f4b5a" , "26300"}
+                //{"84c3cdea6f4b10d0e2abeb24bdfead502a348a63" , "28000"},
+                {"872199f3781706f51b84d8a89c1d148d26bcdbad" , "27000"},
+                {"dc7db76b5fb895d34b7274abb6ca59b56590a784" , "26400"},
+                {"d052b0e1c1a83cb25739eb87471ba6d8791f4b5a" , "26300"}
              //其他的支持还没写，你要是看到这段文字可以考虑一下帮我写写然后PR到仓库。 -zicai
             };
             return version_dict.TryGetValue(SHA1, out string magisk_ver) ? magisk_ver : throw new Exception(GetTranslation("Basicflash_MagsikError"));
         }
         private static async Task Magisk_Pre(string temp_path)
         {
-            List<(string SourcePath, string DestinationPath)> filesToCopy =
-            [
-                (Path.Combine(temp_path, "lib", "armeabi-v7a", "libmagisk32.so"), Path.Combine(temp_path, "lib", "armeabi-v7a", "magisk32")),
+            List<(string SourcePath, string DestinationPath)> filesToCopy;
+            if (File.Exists(Path.Combine(temp_path, "lib", "armeabi-v7a", "libmagisk32.so")))
+            {
+
+                filesToCopy =
+                [
+                    (Path.Combine(temp_path, "lib", "armeabi-v7a", "libmagisk32.so"), Path.Combine(temp_path, "lib", "armeabi-v7a", "magisk32")),
                 (Path.Combine(temp_path, "lib", "armeabi-v7a", "libmagiskinit.so"), Path.Combine(temp_path, "lib", "armeabi-v7a", "init")),
                 (Path.Combine(temp_path, "lib", "armeabi-v7a", "libmagisk32.so"), Path.Combine(temp_path, "lib", "arm64-v8a", "magisk32")),
                 (Path.Combine(temp_path, "lib", "arm64-v8a", "libmagisk64.so"), Path.Combine(temp_path, "lib", "arm64-v8a", "magisk64")),
@@ -127,7 +132,24 @@ namespace UotanToolbox.Common.PatchHelper
                 (Path.Combine(temp_path, "lib", "x86", "libmagisk32.so"), Path.Combine(temp_path, "lib", "x86_64", "magisk32")),
                 (Path.Combine(temp_path, "lib", "x86_64", "libmagisk64.so"), Path.Combine(temp_path, "lib", "x86_64", "magisk64")),
                 (Path.Combine(temp_path, "lib", "x86_64", "libmagiskinit.so"), Path.Combine(temp_path, "lib", "x86_64", "init"))
-            ];
+                ];
+            }
+            else
+            {
+                filesToCopy =
+                [
+                (Path.Combine(temp_path, "lib", "armeabi-v7a", "libmagisk.so"), Path.Combine(temp_path, "lib", "armeabi-v7a", "magisk32")),
+                (Path.Combine(temp_path, "lib", "armeabi-v7a", "libmagiskinit.so"), Path.Combine(temp_path, "lib", "armeabi-v7a", "init")),
+                (Path.Combine(temp_path, "lib", "armeabi-v7a", "libmagisk.so"), Path.Combine(temp_path, "lib", "arm64-v8a", "magisk32")),
+                (Path.Combine(temp_path, "lib", "arm64-v8a", "libmagisk.so"), Path.Combine(temp_path, "lib", "arm64-v8a", "magisk64")),
+                (Path.Combine(temp_path, "lib", "arm64-v8a", "libmagiskinit.so"), Path.Combine(temp_path, "lib", "arm64-v8a", "init")),
+                (Path.Combine(temp_path, "lib", "x86", "libmagisk.so"), Path.Combine(temp_path, "lib", "x86", "magisk32")),
+                (Path.Combine(temp_path, "lib", "x86", "libmagiskinit.so"), Path.Combine(temp_path, "lib", "x86", "init")),
+                (Path.Combine(temp_path, "lib", "x86", "libmagisk.so"), Path.Combine(temp_path, "lib", "x86_64", "magisk32")),
+                (Path.Combine(temp_path, "lib", "x86_64", "libmagisk.so"), Path.Combine(temp_path, "lib", "x86_64", "magisk64")),
+                (Path.Combine(temp_path, "lib", "x86_64", "libmagiskinit.so"), Path.Combine(temp_path, "lib", "x86_64", "init"))
+                ];
+            }
             await Task.WhenAll(filesToCopy.Select(async file =>
             {
                 try

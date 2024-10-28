@@ -88,7 +88,7 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 Apk File 的本地化字符串。
+        ///   查找类似 App File 的本地化字符串。
         /// </summary>
         public static string Appmgr_ApkFile {
             get {
@@ -187,7 +187,7 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 Fetch application list 的本地化字符串。
+        ///   查找类似 Fetch List 的本地化字符串。
         /// </summary>
         public static string Appmgr_FetchApplicationList {
             get {
@@ -268,20 +268,29 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 Please execute in system 的本地化字符串。
-        /// </summary>
-        public static string Appmgr_PleaseExecuteInSystem {
-            get {
-                return ResourceManager.GetString("Appmgr_PleaseExecuteInSystem", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   查找类似 Run 的本地化字符串。
         /// </summary>
         public static string Appmgr_Run {
             get {
                 return ResourceManager.GetString("Appmgr_Run", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Search for the application you want 的本地化字符串。
+        /// </summary>
+        public static string Appmgr_SearchApp {
+            get {
+                return ResourceManager.GetString("Appmgr_SearchApp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Wait for all applications to load 的本地化字符串。
+        /// </summary>
+        public static string Appmgr_SearchWait {
+            get {
+                return ResourceManager.GetString("Appmgr_SearchWait", resourceCulture);
             }
         }
         
@@ -1096,6 +1105,15 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
+        ///   查找类似 ADB device detected, but it seems that the current system has not written relevant USB rules. Should you try to execute with root privileges? 的本地化字符串。
+        /// </summary>
+        public static string Common_ADBRoot {
+            get {
+                return ResourceManager.GetString("Common_ADBRoot", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Select File 的本地化字符串。
         /// </summary>
         public static string Common_ChooseFile {
@@ -1141,7 +1159,7 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 Please enter Recovery mode or enable USB debugging! 的本地化字符串。
+        ///   查找类似 Please enter Recovery mode or enable USB debugging in the Android system! 的本地化字符串。
         /// </summary>
         public static string Common_EnterRecOrOpenADB {
             get {
@@ -1200,6 +1218,15 @@ namespace UotanToolbox.Assets {
         public static string Common_FolderNoPermission {
             get {
                 return ResourceManager.GetString("Common_FolderNoPermission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 HDC device detected, but it seems that the current system has not written relevant USB rules. Should you try to execute with root privileges? 的本地化字符串。
+        /// </summary>
+        public static string Common_HDCRoot {
+            get {
+                return ResourceManager.GetString("Common_HDCRoot", resourceCulture);
             }
         }
         
@@ -1276,11 +1303,21 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 Please enter the system and enable USB debugging! 的本地化字符串。
+        ///   查找类似 Please enter the Android system and enable USB debugging!
+        ///*Not currently supporting the OpenHarmony devices! 的本地化字符串。
         /// </summary>
         public static string Common_OpenADB {
             get {
                 return ResourceManager.GetString("Common_OpenADB", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Please enter the Android or OpenHarmony system and enable USB debugging 的本地化字符串。
+        /// </summary>
+        public static string Common_OpenADBOrHDC {
+            get {
+                return ResourceManager.GetString("Common_OpenADBOrHDC", resourceCulture);
             }
         }
         
@@ -1321,11 +1358,38 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
+        ///   查找类似 Get Update 的本地化字符串。
+        /// </summary>
+        public static string ConnectionDialog_GetUpdate {
+            get {
+                return ResourceManager.GetString("ConnectionDialog_GetUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Notice 的本地化字符串。
         /// </summary>
         public static string ConnectionDialog_Notice {
             get {
                 return ResourceManager.GetString("ConnectionDialog_Notice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 New version discovered, it is recommended to update as soon as possible! 的本地化字符串。
+        /// </summary>
+        public static string ConnectionDialog_Updates {
+            get {
+                return ResourceManager.GetString("ConnectionDialog_Updates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 View Updates 的本地化字符串。
+        /// </summary>
+        public static string ConnectionDialog_ViewUpdates {
+            get {
+                return ResourceManager.GetString("ConnectionDialog_ViewUpdates", resourceCulture);
             }
         }
         
@@ -1798,6 +1862,15 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
+        ///   查找类似 Android 的本地化字符串。
+        /// </summary>
+        public static string Home_Android {
+            get {
+                return ResourceManager.GetString("Home_Android", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Back 的本地化字符串。
         /// </summary>
         public static string Home_BackButton {
@@ -1852,6 +1925,17 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
+        ///   查找类似 No device connection detected.
+        ///If in Android or HarmonyOS system, please ensure that the device has enabled USB debugging. 
+        ///If in other modes, please ensure that the driver is installed correctly. 的本地化字符串。
+        /// </summary>
+        public static string Home_CheckDevice {
+            get {
+                return ResourceManager.GetString("Home_CheckDevice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Choose Device 的本地化字符串。
         /// </summary>
         public static string Home_ChooseDevice {
@@ -1870,7 +1954,7 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 Incremental Version 的本地化字符串。
+        ///   查找类似 Build Version 的本地化字符串。
         /// </summary>
         public static string Home_CompiledVersion {
             get {
@@ -2086,6 +2170,15 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
+        ///   查找类似 OpenHarmony 的本地化字符串。
+        /// </summary>
+        public static string Home_OpenHOS {
+            get {
+                return ResourceManager.GetString("Home_OpenHOS", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Pair code: 的本地化字符串。
         /// </summary>
         public static string Home_PairingCode {
@@ -2246,13 +2339,6 @@ namespace UotanToolbox.Assets {
                 return ResourceManager.GetString("Home_ToStorage", resourceCulture);
             }
         }
-        ///   查找类似 System SDK 的本地化字符串。
-        /// </summary>
-        public static string Home_SystemSDK {
-            get {
-                return ResourceManager.GetString("Home_SystemSDK", resourceCulture);
-            }
-        }
         
         /// <summary>
         ///   查找类似 A/B Slot 的本地化字符串。
@@ -2309,20 +2395,11 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 Wireless ADB 的本地化字符串。
+        ///   查找类似 Wireless Connection 的本地化字符串。
         /// </summary>
         public static string Home_WirelessADB {
             get {
                 return ResourceManager.GetString("Home_WirelessADB", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查找类似 Wireless ADB Connection 的本地化字符串。
-        /// </summary>
-        public static string Home_WirelessADBTitle {
-            get {
-                return ResourceManager.GetString("Home_WirelessADBTitle", resourceCulture);
             }
         }
         
@@ -2507,7 +2584,7 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 ADB Services 的本地化字符串。
+        ///   查找类似 ADB/HDC Services 的本地化字符串。
         /// </summary>
         public static string MainView_ADB {
             get {
@@ -2579,7 +2656,7 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 Restart ADB 的本地化字符串。
+        ///   查找类似 Restart Services 的本地化字符串。
         /// </summary>
         public static string MainView_RestartADB {
             get {
@@ -2750,7 +2827,7 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
-        ///   查找类似 Remove limit 的本地化字符串。
+        ///   查找类似 Remove limit of partition 的本地化字符串。
         /// </summary>
         public static string Modifypartition_RemoveLimit {
             get {
@@ -3731,6 +3808,15 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
+        ///   查找类似 Open source project 的本地化字符串。
+        /// </summary>
+        public static string Settings_OpenSource {
+            get {
+                return ResourceManager.GetString("Settings_OpenSource", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Other 的本地化字符串。
         /// </summary>
         public static string Settings_Other {
@@ -3884,6 +3970,26 @@ namespace UotanToolbox.Assets {
         }
         
         /// <summary>
+        ///   查找类似 Add  Magisk 的本地化字符串。
+        /// </summary>
+        public static string Wiredflash_AddMagisk {
+            get {
+                return ResourceManager.GetString("Wiredflash_AddMagisk", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Checking this option will default to using the built-in Magisk in the toolbox to patch Boot, and the version will be consistent with the default display on the Basic Flash page. 
+        ///If you wish to replace Magisk, please first select your Magisk on the Basic Flash page, confirm that the toolbox supports this version of Magisk, and then replace it with the Magisk.apk file in the APK folder of the toolbox directory.
+        ///*Only valid when the ROM uses the original Boot image! 的本地化字符串。
+        /// </summary>
+        public static string Wiredflash_AddRootTip {
+            get {
+                return ResourceManager.GetString("Wiredflash_AddRootTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Format data 的本地化字符串。
         /// </summary>
         public static string Wiredflash_ClearAllData {
@@ -3952,6 +4058,24 @@ namespace UotanToolbox.Assets {
         public static string Wiredflash_NoMul {
             get {
                 return ResourceManager.GetString("Wiredflash_NoMul", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Open APK directory 的本地化字符串。
+        /// </summary>
+        public static string Wiredflash_OpenAPK {
+            get {
+                return ResourceManager.GetString("Wiredflash_OpenAPK", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Repairing Boot image...... 的本地化字符串。
+        /// </summary>
+        public static string Wiredflash_RepairBoot {
+            get {
+                return ResourceManager.GetString("Wiredflash_RepairBoot", resourceCulture);
             }
         }
         

@@ -1,18 +1,16 @@
-﻿using System;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using SukiUI.Controls;
-using SukiUI.Toasts;
-using SukiUI.Enums;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using UotanToolbox.Common;
 using SukiUI.Dialogs;
-using System.Threading.Tasks;
+using SukiUI.Toasts;
+using System;
+using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using UotanToolbox.Common;
 
 namespace UotanToolbox.Features.Home;
 
@@ -48,7 +46,7 @@ public partial class HomeView : UserControl
             Global.MainDialogManager.CreateDialog()
                 .WithTitle(GetTranslation("Common_Warn"))
                 .WithContent(GetTranslation("Home_Missing"))
-                .OfType(NotificationType.Error)
+                .OfType(NotificationType.Warning)
                 .WithActionButton("OK", _ => Process.GetCurrentProcess().Kill(), true)
                 .TryShow();
 
@@ -100,7 +98,7 @@ public partial class HomeView : UserControl
                 FileHelper.Write($"{Global.log_path}/drive.txt", drvlog);
                 if (drvlog.Contains(GetTranslation("Basicflash_Success")))
                 {
-                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_InstallSuccess")).Dismiss().ByClickingBackground().TryShow();
+                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Succ")).OfType(NotificationType.Success).WithContent(GetTranslation("Common_InstallSuccess")).Dismiss().ByClickingBackground().TryShow();
                 }
                 else
                 {
@@ -110,7 +108,8 @@ public partial class HomeView : UserControl
         }
         else
         {
-            Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Basicflash_NotUsed")).Dismiss().ByClickingBackground().TryShow();        }
+            Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Basicflash_NotUsed")).Dismiss().ByClickingBackground().TryShow();
+        }
     }
 
     private async void Open9008DI(object sender, RoutedEventArgs args)
@@ -129,7 +128,7 @@ public partial class HomeView : UserControl
                 FileHelper.Write($"{Global.log_path}/drive.txt", drvlog);
                 if (drvlog.Contains(GetTranslation("Basicflash_Success")))
                 {
-                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_InstallSuccess")).Dismiss().ByClickingBackground().TryShow();
+                    Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Succ")).OfType(NotificationType.Success).WithContent(GetTranslation("Common_InstallSuccess")).Dismiss().ByClickingBackground().TryShow();
                 }
                 else
                 {
@@ -157,7 +156,7 @@ public partial class HomeView : UserControl
             Process f = Process.Start(cmdshell);
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
+                Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Execution")).OfType(NotificationType.Information).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
             });
         }
         else
@@ -180,7 +179,7 @@ public partial class HomeView : UserControl
             Process f = Process.Start(cmdshell);
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
+                Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Execution")).OfType(NotificationType.Information).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
             });
         }
         else

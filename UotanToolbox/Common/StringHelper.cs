@@ -1,14 +1,13 @@
-﻿using System;
+﻿using Avalonia.Controls.Notifications;
+using SukiUI.Dialogs;
+using System;
 using System.Collections.Generic;
-using Avalonia.Controls.Shapes;
-using SukiUI.Controls;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Avalonia.Controls.Notifications;
-using SukiUI.Dialogs;
 using UotanToolbox.Features.Appmgr;
 
 
@@ -138,6 +137,58 @@ namespace UotanToolbox.Common
             }
             return applicationInfos;
         }
+
+        public static string[] OHAppList(string applist)
+        {
+            string[] lines = applist.Split(new char[] { '\r', '\n', '	', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            return lines;
+        }
+
+        public static string[] OHAppInfo(string appname)
+        {
+            string[] info = new string[3];
+            appname = appname.Substring(appname.LastIndexOf("\"targetVersion\""));
+            string[] lines = appname.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("\"targetVersion\""))
+                {
+                    try
+                    {
+                        string[] line = lines[i].Split(new char[] { ':', ' ', '"', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (line[1].Length > 2)
+                        {
+                            line[1] = line[1].Substring(line[1].Length - 2);
+                        }
+                        info[0] = line[1];
+                    }
+                    catch { }
+                }
+                if (lines[i].Contains("\"vendor\""))
+                {
+                    try
+                    {
+                        string[] line = lines[i].Split(new char[] { ':', ' ', '"', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        info[1] = line[1];
+                    }
+                    catch
+                    {
+                        info[1] = "Unknow Application";
+                    }
+                }
+                if (lines[i].Contains("\"versionName\""))
+                {
+                    try
+                    {
+                        string[] line = lines[i].Split(new char[] { ':', ' ', '"', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        info[2] = line[1];
+                    }
+                    catch { }
+                }
+            }
+            return info;
+        }
+
         public static string RemoveLineFeed(string str)
         {
             string[] lines = str.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -149,7 +200,7 @@ namespace UotanToolbox.Common
 
         public static string RemoveSpace(string str)
         {
-            string[] lines = str.Split(new char[] { ' '}, StringSplitOptions.RemoveEmptyEntries);
+            string[] lines = str.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             string result = string.Concat(lines);
             if (string.IsNullOrEmpty(result))
                 return "--";
@@ -164,13 +215,13 @@ namespace UotanToolbox.Common
 
         public static string OHColonSplit(string info)
         {
-            string[] infos = info.Split(new char[] { '\r', '\n', ','}, StringSplitOptions.RemoveEmptyEntries);
+            string[] infos = info.Split(new char[] { '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < infos.Length; i++)
             {
-                if (infos[i].Contains("physical screen resolution"))
+                if (infos[i].Contains("physical screen resolution") || infos[i].Contains("supportedMode[0]"))
                 {
-                    string[] device = infos[i].Split(':', StringSplitOptions.RemoveEmptyEntries);
-                    return device[1];
+                    string[] device = infos[i].Split(new char[] { ':', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    return device[device.Length - 1];
                 }
             }
             return "--";
@@ -193,6 +244,22 @@ namespace UotanToolbox.Common
                 string[] Lines = info.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                 return Lines.Length == 2 ? ColonSplit(Lines[1]) : ColonSplit(Lines[0]);
             }
+        }
+
+        public static string OHDensity(string info)
+        {
+            string[] infos = info.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < infos.Length; i++)
+            {
+                if (infos[i].Contains("DPI<X, Y>:"))
+                {
+                    string[] device = infos[i].Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    float x = OnlynumFloat(device[2]);
+                    float y = OnlynumFloat(device[3]);
+                    return Math.Round(Math.Sqrt(x * y)).ToString();
+                }
+            }
+            return "--";
         }
 
         public static string[] Battery(string info)
@@ -252,8 +319,31 @@ namespace UotanToolbox.Common
             return infos;
         }
 
-        public static string[] DiskInfo(string info, string find)
+        public static string[] OHMem(string info)
         {
+            string[] infos = new string[2];
+            string infolite = info.Substring(info.LastIndexOf("Total Pss by Category:"));
+            string[] Lines = infolite.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            int j = 0;
+            for (int i = 0; i < Lines.Length; i++)
+            {
+                if (Lines[i].Contains("Total RAM:") || Lines[i].Contains("Free RAM:"))
+                {
+                    string[] device = Lines[i].Split(new char[] { ' ', ':' }, StringSplitOptions.RemoveEmptyEntries);
+                    infos[j] = device[2];
+                    j++;
+                }
+            }
+            infos = infos.Where(s => !string.IsNullOrEmpty(s)).ToArray();
+            return infos;
+        }
+
+        public static string[] DiskInfo(string info, string find, bool isohhs = false)
+        {
+            if (isohhs)
+            {
+                info = info.Substring(0, info.IndexOf("cmd is: lsof"));
+            }
             string[] columns = new string[20];
             string[] lines = info.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
             string targetLine = lines.FirstOrDefault(line => line.Contains(find));
@@ -261,9 +351,61 @@ namespace UotanToolbox.Common
             {
                 columns = targetLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             }
-
             columns = columns.Where(s => !string.IsNullOrEmpty(s)).ToArray();
             return columns;
+        }
+
+        public static string[] OHDeviceInof(string info)
+        {
+            string[] infos = new string[2];
+            string[] lines = info.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+            string targetLine = lines.FirstOrDefault(line => line.Contains(""));
+            int j = 0;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("fullname:") || lines[i].Contains("deviceTypeName:"))
+                {
+                    string[] device = lines[i].Split(new char[] { ' ', ':' }, StringSplitOptions.RemoveEmptyEntries);
+                    infos[j] = device[1];
+                    j++;
+                }
+            }
+            infos = infos.Where(s => !string.IsNullOrEmpty(s)).ToArray();
+            return infos;
+        }
+
+        public static string OHBuildVersion(string info)
+        {
+            string[] infos = info.Split(new char[] { '\r', '\n', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            return infos[0] + " " + infos[1] + " " + infos[3] + " " + infos[4];
+        }
+
+        public static string OHPowerOnTime(string info)
+        {
+            string[] infos = info.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < infos.Length; i++)
+            {
+                if (infos[i].Contains(" * date time"))
+                {
+                    string[] needline = infos[i].Split('=', StringSplitOptions.RemoveEmptyEntries);
+                    string format = " yyyy-MM-dd HH:mm:ss";
+                    DateTime dateTime;
+                    if (DateTime.TryParseExact(needline[1], format, CultureInfo.InvariantCulture, DateTimeStyles.None, out dateTime))
+                    {
+                        DateTime date1old = new DateTime(1970, 1, 1, 8, 0, 0);
+                        TimeSpan timeSpan = dateTime - date1old;
+                        return $"{timeSpan.Days}{GetTranslation("Info_Day")}{timeSpan.Hours}{GetTranslation("Info_Hour")}{timeSpan.Minutes}{GetTranslation("Info_Minute")}{timeSpan.Seconds}{GetTranslation("Info_Second")}";
+                    }
+                }
+            }
+            return "--";
+        }
+
+        public static string OHApp(string input)
+        {
+            string[] infos = input.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            string error = infos[0].Substring(infos[0].LastIndexOf("error:"));
+            return error;
         }
 
         public static string FastbootVar(string info, string find)
@@ -370,9 +512,8 @@ namespace UotanToolbox.Common
                 string partneed = parts[i];
                 if (partneed.Contains(findpart))
                 {
-                    string[] partno = partneed.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
-                    int lastPartIndex = partno.Length == 5 ? 4 : 5;
-                    if (partno[lastPartIndex] == findpart)
+                    string[] partno = Items(partneed.ToCharArray());
+                    if (partno[5] == findpart)
                     {
                         return partno[0];
                     }
@@ -387,6 +528,45 @@ namespace UotanToolbox.Common
             string[] NeedLine = Lines[1].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             string size = NeedLine[^1];
             return size;
+        }
+
+        public static string[] Items(char[] chars)
+        {
+            int index = 0;
+            int nrindex = 0;
+            bool notnr = false;
+            string[] items = new string[7];
+            for (int j = 0; j < chars.Length; j++)
+            {
+                if (chars[j] == ' ')
+                {
+                    if (notnr)
+                    {
+                        index++;
+                        notnr = false;
+                    }
+                    else
+                    {
+                        nrindex++;
+                        if (nrindex > 13)
+                        {
+                            index++;
+                            nrindex = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        items[index] += chars[j];
+                    }
+                    catch { }
+                    notnr = true;
+                    nrindex = 0;
+                }
+            }
+            return items;
         }
 
         /// <summary>

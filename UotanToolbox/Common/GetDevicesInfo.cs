@@ -1,8 +1,11 @@
-﻿using System;
+﻿using Avalonia.Collections;
+using Avalonia.Controls.Notifications;
+using SukiUI.Dialogs;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Avalonia.Collections;
 
 namespace UotanToolbox.Common
 {
@@ -15,14 +18,46 @@ namespace UotanToolbox.Common
 
         public static async Task<string[]> DevicesList()
         {
-            string adb = await CallExternalProgram.ADB("devices");
-            string fastboot = await CallExternalProgram.Fastboot("devices");
             string devcon = Global.System == "Windows" ? await CallExternalProgram.Devcon("find usb*") : await CallExternalProgram.LsUSB();
-            string hdc = await CallExternalProgram.HDC("list targets");
-            string[] adbdevices = StringHelper.ADBDevices(adb);
-            string[] fbdevices = StringHelper.FastbootDevices(fastboot);
-            string[] hdcdevice = StringHelper.HDCDevices(hdc);
+            string[] adbdevices = StringHelper.ADBDevices(await CallExternalProgram.ADB("devices"));
+            string[] fbdevices = StringHelper.FastbootDevices(await CallExternalProgram.Fastboot("devices"));
+            string[] hdcdevice = StringHelper.HDCDevices(await CallExternalProgram.HDC("list targets"));
             string[] comdevices = StringHelper.COMDevices(devcon);
+            if (Global.System.Contains("Linux") && Global.root)
+            {
+                if (devcon.Contains("Google Inc. Nexus/Pixel Device") && adbdevices.Length == 0)
+                {
+                    Global.MainDialogManager.CreateDialog()
+                            .WithTitle(GetTranslation("Common_Warn"))
+                            .WithContent(GetTranslation("Common_ADBRoot"))
+                            .OfType(NotificationType.Warning)
+                            .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ =>
+                            {
+                                string cmd = Path.Combine(Global.bin_path, "platform-tools", "adb");
+                                await CallExternalProgram.Sudo("chmod -R 777 /dev/bus/usb/");
+                                adbdevices = StringHelper.ADBDevices(await CallExternalProgram.ADB("devices"));
+                            }, true)
+                            .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
+                            .TryShow();
+                    Global.root = false;
+                }
+                if (devcon.Contains("HDC Device") && hdcdevice.Length == 0)
+                {
+                    Global.MainDialogManager.CreateDialog()
+                            .WithTitle(GetTranslation("Common_Warn"))
+                            .WithContent(GetTranslation("Common_HDCRoot"))
+                            .OfType(NotificationType.Warning)
+                            .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ =>
+                            {
+                                string cmd = Path.Combine(Global.bin_path, "toolchains", "hdc");
+                                await CallExternalProgram.Sudo("chmod -R 777 /dev/bus/usb/");
+                                hdcdevice = StringHelper.HDCDevices(await CallExternalProgram.HDC("list targets"));
+                            }, true)
+                            .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
+                            .TryShow();
+                    Global.root = false;
+                }
+            }
             string[] devices = new string[adbdevices.Length + fbdevices.Length + hdcdevice.Length + comdevices.Length];
             Array.Copy(adbdevices, 0, devices, 0, adbdevices.Length);
             Array.Copy(fbdevices, 0, devices, adbdevices.Length, fbdevices.Length);
@@ -153,7 +188,7 @@ namespace UotanToolbox.Common
                 }
                 else if (thisdevice.Contains("	device"))
                 {
-                    status = GetTranslation("Home_System");
+                    status = GetTranslation("Home_Android");
                 }
                 else if (thisdevice.Contains("unauthorized"))
                 {
@@ -167,7 +202,7 @@ namespace UotanToolbox.Common
                         : status == GetTranslation("Info_UnauthorizedDevice") || status == GetTranslation("Home_Sideload")
                                             ? "--"
                                             : GetTranslation("Info_AOnly");
-                if (status == GetTranslation("Home_System"))
+                if (status == GetTranslation("Home_Android"))
                 {
                     string android = await CallExternalProgram.ADB($"-s {devicename} shell getprop ro.build.version.release");
                     string sdk = await CallExternalProgram.ADB($"-s {devicename} shell getprop ro.build.version.sdk");
@@ -222,8 +257,9 @@ namespace UotanToolbox.Common
                 try
                 {
                     string[] mem = StringHelper.Mem(await CallExternalProgram.ADB($"-s {devicename} shell cat /proc/meminfo | grep Mem"));
-                    memlevel = Math.Round(Math.Round(double.Parse(mem[1]) * 1.024 / 1000000, 1) / Math.Round(double.Parse(mem[0]) * 1.024 / 1000000) * 100).ToString();
-                    usemem = string.Format($"{Math.Round(double.Parse(mem[1]) * 1.024 / 1000000, 1)}GB/{Math.Round(double.Parse(mem[0]) * 1.024 / 1000000)}GB");
+                    double use = double.Parse(mem[0]) - double.Parse(mem[1]);
+                    memlevel = Math.Round(Math.Round(use * 1.024 / 1000000, 1) / Math.Round(double.Parse(mem[0]) * 1.024 / 1000000) * 100).ToString();
+                    usemem = string.Format($"{Math.Round(use * 1.024 / 1000000, 1)}GB/{Math.Round(double.Parse(mem[0]) * 1.024 / 1000000)}GB");
                 }
                 catch
                 {
@@ -261,17 +297,47 @@ namespace UotanToolbox.Common
             }
             if (hdc.Contains(devicename))
             {
-                status = "系统";
+                status = GetTranslation("Home_OpenHOS");
                 blstatus = "--";
-                string harmony = StringHelper.OHVersion(await CallExternalProgram.HDC($"-t {devicename} shell param get const.product.software.version"));
                 string sdk = StringHelper.RemoveLineFeed(await CallExternalProgram.HDC($"-t {devicename} shell param get const.ohos.apiversion"));
+                string harmony = StringHelper.OHVersion(await CallExternalProgram.HDC($"-t {devicename} shell param get const.product.software.version"));
                 systemsdk = String.Format($"OpenHarmony {harmony}({StringHelper.RemoveSpace(sdk)})");
+                try
+                {
+                    string[] deviceinfo = StringHelper.OHDeviceInof(await CallExternalProgram.HDC($"-t {devicename} shell SP_daemon -deviceinfo"));
+                    //systemsdk = String.Format($"{deviceinfo[1]}({StringHelper.RemoveSpace(sdk)})");
+                    cpucode = deviceinfo[0];
+                }
+                catch
+                {
+                    cpucode = "--";
+                }
                 codename = StringHelper.RemoveLineFeed(await CallExternalProgram.HDC($"-t {devicename} shell param get const.product.model"));
                 devicebrand = StringHelper.RemoveLineFeed(await CallExternalProgram.HDC($"-t {devicename} shell param get const.product.brand"));
+                if (devicebrand.Contains("default"))
+                {
+                    devicebrand = StringHelper.RemoveLineFeed(await CallExternalProgram.HDC($"-t {devicename} shell param get const.product.manufacturer"));
+                }
                 devicemodel = StringHelper.RemoveLineFeed(await CallExternalProgram.HDC($"-t {devicename} shell param get const.product.name"));
                 displayhw = StringHelper.OHColonSplit(await CallExternalProgram.HDC($"-t {devicename} shell hidumper -s RenderService -a screen"));
                 kernel = StringHelper.OHKernel(await CallExternalProgram.HDC($"-t {devicename} shell uname -a"));
                 cpuabi = StringHelper.RemoveLineFeed(await CallExternalProgram.HDC($"-t {devicename} shell param get const.product.cpu.abilist"));
+                try
+                {
+                    compileversion = StringHelper.OHBuildVersion(await CallExternalProgram.HDC($"-t {devicename} shell param get const.build.description"));
+                }
+                catch
+                {
+                    compileversion = "--";
+                }
+                try
+                {
+                    powerontime = StringHelper.OHPowerOnTime(await CallExternalProgram.HDC($"-t {devicename} shell hidumper -s TimeService -a -a"));
+                }
+                catch
+                {
+                    powerontime = "--";
+                }
                 try
                 {
                     string[] battery = StringHelper.BatteryOH(await CallExternalProgram.HDC($"-t {devicename} shell hidumper -s BatteryService -a -i"));
@@ -282,6 +348,38 @@ namespace UotanToolbox.Common
                 {
                     batterylevel = "0";
                     batteryinfo = "--";
+                }
+                try
+                {
+                    density = StringHelper.OHDensity(await CallExternalProgram.HDC($"-t {devicename} shell hidumper -s DisplayManagerService -a -a"));
+                }
+                catch
+                {
+                    density = "--";
+                }
+                try
+                {
+                    string[] mem = StringHelper.OHMem(await CallExternalProgram.HDC($"-t {devicename} shell hidumper -s MemoryManagerService --mem"));
+                    double use = double.Parse(mem[0]) - double.Parse(mem[1]);
+                    memlevel = Math.Round(Math.Round(use * 1.024 / 1000000, 1) / Math.Round(double.Parse(mem[0]) * 1.024 / 1000000) * 100).ToString();
+                    usemem = string.Format($"{Math.Round(use * 1.024 / 1000000, 1)}GB/{Math.Round(double.Parse(mem[0]) * 1.024 / 1000000)}GB");
+                }
+                catch
+                {
+                    memlevel = "0";
+                    usemem = "--";
+                }
+                try
+                {
+                    string diskinfos2 = await CallExternalProgram.HDC($"-t {devicename} shell hidumper -s StorageManager --storage");
+                    string[] columns = StringHelper.DiskInfo(diskinfos2, "/data", true);
+                    progressdisk = columns[4].TrimEnd('%');
+                    diskinfo = string.Format($"{double.Parse(columns[2]) / 1024 / 1024:0.00}GB/{double.Parse(columns[1]) / 1024 / 1024:0.00}GB");
+                }
+                catch
+                {
+                    progressdisk = "0";
+                    diskinfo = "--";
                 }
             }
             string[] deviceLines = devcon.Split(separator, StringSplitOptions.RemoveEmptyEntries);
@@ -359,6 +457,7 @@ namespace UotanToolbox.Common
             string adb = await CallExternalProgram.ADB("devices");
             string fastboot = await CallExternalProgram.Fastboot("devices");
             string devcon = Global.System == "Windows" ? await CallExternalProgram.Devcon("find usb*") : await CallExternalProgram.LsUSB();
+            string hdc = await CallExternalProgram.HDC("list targets");
             if (fastboot.Contains(devicename))
             {
                 string isuserspace = await CallExternalProgram.Fastboot($"-s {devicename} getvar is-userspace");
@@ -407,7 +506,7 @@ namespace UotanToolbox.Common
                 }
                 else if (thisdevice.Contains("	device"))
                 {
-                    status = GetTranslation("Home_System");
+                    status = GetTranslation("Home_Android");
                 }
                 else if (thisdevice.Contains("unauthorized"))
                 {
@@ -427,6 +526,11 @@ namespace UotanToolbox.Common
                 {
                     blstatus = StringHelper.RemoveLineFeed(await CallExternalProgram.ADB($"-s {devicename} shell getprop ro.boot.vbmeta.device_state"));
                 }
+            }
+            if (hdc.Contains(devicename))
+            {
+                status = GetTranslation("Home_OpenHOS");
+                codename = StringHelper.RemoveLineFeed(await CallExternalProgram.HDC($"-t {devicename} shell param get const.product.model"));
             }
             string[] deviceLines = devcon.Split(separator, StringSplitOptions.RemoveEmptyEntries);
             if (devcon.Contains(devicename))

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
 using SukiUI.Dialogs;
 using SukiUI.Toasts;
+using System;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using UotanToolbox.Common;
 
 
@@ -29,6 +29,7 @@ public partial class ModifypartitionView : UserControl
         Global.MainDialogManager.CreateDialog()
             .WithTitle(GetTranslation("Common_Warn"))
             .WithContent(GetTranslation("Modifypartition_Warn"))
+            .OfType(NotificationType.Warning)
             .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), _ => Modifypartition.IsEnabled = true, true)
             .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => Modifypartition.IsEnabled = false, true)
             .TryShow();
@@ -75,19 +76,8 @@ public partial class ModifypartitionView : UserControl
                 PartModel[] part = new PartModel[parts.Length - 5];
                 for (int i = 6; i < parts.Length; i++)
                 {
-                    string[] items = parts[i].Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (items.Length == 5)
-                    {
-                        part[i - 6] = new PartModel(items[0], items[1], items[2], items[3], "", items[4], "");
-                    }
-                    else if (items.Length == 6)
-                    {
-                        part[i - 6] = new PartModel(items[0], items[1], items[2], items[3], items[4], items[5], "");
-                    }
-                    else if (items.Length >= 7)
-                    {
-                        part[i - 6] = new PartModel(items[0], items[1], items[2], items[3], items[4], items[5], items[6]);
-                    }
+                    string[] items = StringHelper.Items(parts[i].ToCharArray());
+                    part[i - 6] = new PartModel(items[0], items[1], items[2], items[3], items[4], items[5], items[6]);
                 }
                 PartList.ItemsSource = part;
             }
@@ -107,7 +97,7 @@ public partial class ModifypartitionView : UserControl
         if (await GetDevicesInfo.SetDevicesInfoLittle())
         {
             MainViewModel sukiViewModel = GlobalData.MainViewModelInstance;
-            if (sukiViewModel.Status == "Recovery" || sukiViewModel.Status == GetTranslation("Home_System"))
+            if (sukiViewModel.Status == "Recovery" || sukiViewModel.Status == GetTranslation("Home_Android"))
             {
                 BusyPart.IsBusy = true;
                 ReadPartBut.IsEnabled = false;
@@ -116,12 +106,13 @@ public partial class ModifypartitionView : UserControl
                 {
                     _ = await CallExternalProgram.ADB($"-s {Global.thisdevice} shell twrp unmount data");
                 }
-                if (sukiViewModel.Status == GetTranslation("Home_System"))
+                if (sukiViewModel.Status == GetTranslation("Home_Android"))
                 {
                     Global.MainDialogManager.CreateDialog()
                         .WithTitle(GetTranslation("Common_Warn"))
                         .WithContent(GetTranslation("Common_NeedRoot"))
-                        .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ => 
+                        .OfType(NotificationType.Warning)
+                        .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ =>
                         {
                             await FeaturesHelper.GetPartTableSystem(Global.thisdevice);
                             AddPartList();
@@ -209,7 +200,7 @@ public partial class ModifypartitionView : UserControl
                             string shell = string.Format($"-s {Global.thisdevice} shell /tmp/parted /dev/block/{choice} rm {partnum}");
                             _ = await CallExternalProgram.ADB(shell);
                             ReadPart(sender, args);
-                            Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
+                            Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Execution")).OfType(NotificationType.Information).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
                         }
                         else
                         {
@@ -249,6 +240,7 @@ public partial class ModifypartitionView : UserControl
                 Global.MainDialogManager.CreateDialog()
                                             .WithTitle(GetTranslation("Common_Warn"))
                                             .WithContent(GetTranslation("Modifypartition_SetEFI"))
+                                            .OfType(NotificationType.Warning)
                                             .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ =>
                                             {
                                                 if (IdNumber.Text is not null and not "")
@@ -300,7 +292,7 @@ public partial class ModifypartitionView : UserControl
                                                             string shell = string.Format($"-s {Global.thisdevice} shell /tmp/parted /dev/block/{choice} set {partnum} esp on");
                                                             await CallExternalProgram.ADB(shell);
                                                             ReadPart(sender, args);
-                                                            Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
+                                                            Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Execution")).OfType(NotificationType.Information).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
                                                         }
                                                         else
                                                         {
@@ -384,7 +376,7 @@ public partial class ModifypartitionView : UserControl
                         string shell = string.Format($"-s {Global.thisdevice} shell /tmp/parted /dev/block/{choice} mkpart {NewPartitionName.Text} {NewPartitionFormat.Text} {NewPartitionStartpoint.Text} {NewPartitionEndpoint.Text}");
                         _ = await CallExternalProgram.ADB(shell);
                         ReadPart(sender, args);
-                        Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
+                        Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Execution")).OfType(NotificationType.Information).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
                     }
                     else
                     {
@@ -457,6 +449,7 @@ public partial class ModifypartitionView : UserControl
                     Global.MainDialogManager.CreateDialog()
                                                 .WithTitle(GetTranslation("Common_Warn"))
                                                 .WithContent(GetTranslation("Modifypartition_Set128"))
+                                                .OfType(NotificationType.Warning)
                                                 .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), async _ =>
                                                 {
                                                     await CallExternalProgram.ADB($"-s {Global.thisdevice} push {Global.runpath}/Push/sgdisk /tmp/");
@@ -469,7 +462,7 @@ public partial class ModifypartitionView : UserControl
                                                     }
                                                     else
                                                     {
-                                                        Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
+                                                        Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Execution")).OfType(NotificationType.Information).WithContent(GetTranslation("Common_Execution")).Dismiss().ByClickingBackground().TryShow();
                                                         await CallExternalProgram.ADB("reboot recovery");
                                                     }
                                                 }, true)

@@ -1,21 +1,19 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Avalonia.Collections;
+﻿using Avalonia.Collections;
 using Avalonia.Controls.Notifications;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Material.Icons;
 using Newtonsoft.Json;
-using Splat;
 using SukiUI;
 using SukiUI.Dialogs;
 using SukiUI.Enums;
 using SukiUI.Models;
 using SukiUI.Toasts;
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 using UotanToolbox.Common;
-
 using UotanToolbox.Utilities;
 
 namespace UotanToolbox.Features.Settings;
@@ -42,6 +40,9 @@ public partial class SettingsViewModel : MainPageBase
     [ObservableProperty] private bool _backgroundTransitions;
     [ObservableProperty] private string _currentVersion = Global.currentVersion;
     [ObservableProperty] private string _binVersion = null;
+    [ObservableProperty] private string _mouZei = "@某贼\r\n提供开发思路";
+    [ObservableProperty] private string _kCN = "@剧毒的KCN\r\n安装器开发";
+    [ObservableProperty] private string _aCA = "@小太阳ACA\r\n依赖支持";
     private string _customShader = null;
 
     private static string GetTranslation(string key)
@@ -164,28 +165,38 @@ public partial class SettingsViewModel : MainPageBase
 
             dynamic convertedBody = JsonConvert.DeserializeObject<dynamic>(responseBody);
             SettingsViewModel vm = new SettingsViewModel();
-            if (convertedBody.release_version != vm.CurrentVersion)
+            string version = convertedBody.release_version;
+            if (version.Contains("beta"))
             {
-                Global.MainDialogManager.CreateDialog()
-                .WithTitle(GetTranslation("Settings_NewVersionAvailable"))
-                .WithContent((String)JsonConvert.SerializeObject(convertedBody.release_content))
-                .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), _ => UrlUtilities.OpenURL("https://toolbox.uotan.cn"), true)
-                .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
-                .TryShow();
-            }
-            else if (convertedBody.beta_version != vm.CurrentVersion)
-            {
-                Global.MainDialogManager.CreateDialog()
-                .WithTitle(GetTranslation("Settings_NewVersionAvailable"))
-                .WithContent((String)JsonConvert.SerializeObject(convertedBody.beta_content))
-                .WithActionButton(GetTranslation("ConnectionDialog_Confirm"), _ => UrlUtilities.OpenURL("https://toolbox.uotan.cn"), true)
-                .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
-                .TryShow();
+                if (convertedBody.beta_version != vm.CurrentVersion)
+                {
+                    string serializedContent = (String)JsonConvert.SerializeObject(convertedBody.beta_content).Replace("\\n", "\n");
+                    if (serializedContent.Length > 1) serializedContent = serializedContent.Substring(1, serializedContent.Length - 2);
+                    Global.MainDialogManager.CreateDialog()
+                    .WithTitle(GetTranslation("Settings_NewVersionAvailable"))
+                    .WithContent(serializedContent)
+                    .OfType(NotificationType.Information)
+                    .WithActionButton(GetTranslation("ConnectionDialog_GetUpdate"), _ => UrlUtilities.OpenURL("https://toolbox.uotan.cn"), true)
+                    .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
+                    .TryShow();
+                }
+                else Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Settings_UpToDate")).Dismiss().ByClickingBackground().TryShow();
             }
             else
             {
-
-                Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Settings_UpToDate")).Dismiss().ByClickingBackground().TryShow();
+                if (convertedBody.release_version != vm.CurrentVersion)
+                {
+                    string serializedContent = (String)JsonConvert.SerializeObject(convertedBody.release_content).Replace("\\n", "\n");
+                    if (serializedContent.Length > 1) serializedContent = serializedContent.Substring(1, serializedContent.Length - 2);
+                    Global.MainDialogManager.CreateDialog()
+                    .WithTitle(GetTranslation("Settings_NewVersionAvailable"))
+                    .WithContent(serializedContent)
+                    .OfType(NotificationType.Information)
+                    .WithActionButton(GetTranslation("ConnectionDialog_GetUpdate"), _ => UrlUtilities.OpenURL("https://toolbox.uotan.cn"), true)
+                    .WithActionButton(GetTranslation("ConnectionDialog_Cancel"), _ => { }, true)
+                    .TryShow();
+                }
+                else Global.MainDialogManager.CreateDialog().WithTitle(GetTranslation("Common_Error")).OfType(NotificationType.Error).WithContent(GetTranslation("Settings_UpToDate")).Dismiss().ByClickingBackground().TryShow();
             }
         }
         catch (HttpRequestException e)
